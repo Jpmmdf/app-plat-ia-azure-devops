@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import json
+import logging
 import os
 import re
 from typing import Any, Dict, List, Optional, Union
@@ -28,6 +30,9 @@ FEATURE_WIT_NAME = "Feature"
 PBI_WIT_NAME = "Product Backlog Item"
 TASK_WIT_NAME = "Task"
 AcceptanceCriteriaInput = Optional[Union[str, List[str]]]
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(level=getattr(logging, LOG_LEVEL, logging.INFO))
+logger = logging.getLogger("ops_plat_azure_devops_gateway")
 
 
 # ---------- Models ----------
@@ -168,40 +173,120 @@ def env_get(env_obj: Any, key: str, default: Optional[str] = None) -> Optional[s
     return os.getenv(key, default)
 
 
+def _json_log(level: int, event: str, **fields: Any) -> None:
+    safe_fields = {k: v for k, v in fields.items() if v is not None}
+    logger.log(level, json.dumps({"event": event, **safe_fields}, ensure_ascii=True))
+
+
+def _request_log_context(request: Request) -> Dict[str, Any]:
+    return {
+        "method": request.method,
+        "path": request.url.path,
+        "cf_ray": request.headers.get("cf-ray"),
+        "user_agent": request.headers.get("user-agent"),
+    }
+
+
+def _compact_text(value: Any, *, limit: int = 800) -> str:
+    if isinstance(value, str):
+        text = value.strip()
+    else:
+        try:
+            text = json.dumps(value, ensure_ascii=True)
+        except Exception:
+            text = str(value).strip()
+    if not text:
+        return "<empty>"
+    if len(text) <= limit:
+        return text
+    return text[:limit] + "...(truncated)"
+
+
+def _runtime_error_detail(ex: Exception) -> str:
+    detail = str(ex).strip()
+    if detail:
+        return detail
+    return f"{ex.__class__.__name__} sem detalhe"
+
+
 async def req(method: str, url: str, pat: str, headers=None, params=None, json_body=None, timeout=30):
     h = {"Accept": "application/json"}
     if headers:
         h.update(headers)
 
-    async with httpx.AsyncClient(timeout=timeout, auth=httpx.BasicAuth("", pat)) as client:
-        r = await client.request(
+    try:
+        async with httpx.AsyncClient(timeout=timeout, auth=httpx.BasicAuth("", pat)) as client:
+            r = await client.request(
+                method=method,
+                url=url,
+                headers=h,
+                params=params,
+                json=json_body,
+            )
+    except Exception as ex:
+        detail = _runtime_error_detail(ex)
+        _json_log(
+            logging.ERROR,
+            "azure_devops_http_exception",
             method=method,
             url=url,
-            headers=h,
             params=params,
-            json=json_body,
+            detail=detail,
         )
+        raise RuntimeError(f"Azure DevOps request exception - {detail}") from ex
 
     if r.status_code >= 400:
         try:
             detail = r.json()
         except Exception:
             detail = r.text
-        raise RuntimeError(f"HTTP {r.status_code} - {detail}")
+        detail_text = _compact_text(detail)
+        _json_log(
+            logging.ERROR,
+            "azure_devops_http_error",
+            method=method,
+            url=url,
+            params=params,
+            status_code=r.status_code,
+            content_type=r.headers.get("content-type"),
+            activity_id=r.headers.get("x-vss-e2eid") or r.headers.get("activityid"),
+            detail=detail_text,
+        )
+        raise RuntimeError(f"Azure DevOps HTTP {r.status_code} - {detail_text}")
 
     if not r.text:
         return None
 
     content_type = (r.headers.get("content-type") or "").lower()
     if "application/json" not in content_type:
-        snippet = r.text[:400].strip().replace("\n", " ")
-        raise RuntimeError(f"HTTP {r.status_code} - Resposta nao JSON do Azure DevOps: {snippet}")
+        snippet = _compact_text(r.text[:400].replace("\n", " "))
+        _json_log(
+            logging.ERROR,
+            "azure_devops_non_json_response",
+            method=method,
+            url=url,
+            params=params,
+            status_code=r.status_code,
+            content_type=content_type,
+            snippet=snippet,
+        )
+        raise RuntimeError(f"Azure DevOps HTTP {r.status_code} - Resposta nao JSON: {snippet}")
 
     try:
         return r.json()
     except ValueError as ex:
-        snippet = r.text[:400].strip().replace("\n", " ")
-        raise RuntimeError(f"HTTP {r.status_code} - JSON invalido do Azure DevOps: {snippet}") from ex
+        snippet = _compact_text(r.text[:400].replace("\n", " "))
+        _json_log(
+            logging.ERROR,
+            "azure_devops_invalid_json_response",
+            method=method,
+            url=url,
+            params=params,
+            status_code=r.status_code,
+            content_type=content_type,
+            snippet=snippet,
+        )
+        raise RuntimeError(f"Azure DevOps HTTP {r.status_code} - JSON invalido: {snippet}") from ex
 
 
 def normalize_tags(tags: Optional[str]) -> Optional[str]:
@@ -437,8 +522,8 @@ async def ensure_parent_work_item_type(
     try:
         parent = await get_work_item(org, project, pat, parent_id, expand_relations=False)
     except RuntimeError as ex:
-        detail = str(ex)
-        if detail.startswith("HTTP 404"):
+        detail = _runtime_error_detail(ex)
+        if "HTTP 404" in detail:
             raise HTTPException(status_code=404, detail=f"Item pai {parent_id} nao encontrado.") from ex
         raise HTTPException(status_code=400, detail=detail) from ex
 
@@ -480,12 +565,32 @@ def ensure_non_empty(items: List[Any], field_name: str) -> None:
     raise HTTPException(status_code=400, detail=f"Informe ao menos um item em '{field_name}'.")
 
 
+def _raise_http_400_with_log(ex: Exception, request: Request, operation: str) -> None:
+    detail = _runtime_error_detail(ex)
+    _json_log(logging.ERROR, "operation_failed", operation=operation, detail=detail, **_request_log_context(request))
+    raise HTTPException(status_code=400, detail=detail) from ex
+
+
 def runtime_context_or_500(request: Request, x_api_key: Optional[str]) -> Dict[str, str]:
     env_obj = request.scope.get("env")
     azdo_org = env_get(env_obj, "AZDO_ORG", DEFAULT_AZDO_ORG) or DEFAULT_AZDO_ORG
     azdo_project = env_get(env_obj, "AZDO_PROJECT", DEFAULT_AZDO_PROJECT) or DEFAULT_AZDO_PROJECT
-    azdo_pat = env_get(env_obj, "AZDO_PAT") or env_get(env_obj, "AZDO_AT")
+    azdo_pat_env = env_get(env_obj, "AZDO_PAT")
+    azdo_at_env = env_get(env_obj, "AZDO_AT")
+    azdo_pat = azdo_pat_env or azdo_at_env
     gateway_api_key = env_get(env_obj, "GATEWAY_API_KEY")
+    pat_source = "AZDO_PAT" if azdo_pat_env else "AZDO_AT" if azdo_at_env else "none"
+
+    _json_log(
+        logging.INFO,
+        "runtime_context_resolved",
+        azdo_org_set=bool(azdo_org),
+        azdo_project_set=bool(azdo_project),
+        azdo_pat_set=bool(azdo_pat),
+        azdo_pat_source=pat_source,
+        gateway_api_key_set=bool(gateway_api_key),
+        **_request_log_context(request),
+    )
 
     auth_or_401(x_api_key, gateway_api_key)
 
@@ -514,7 +619,15 @@ async def resolve_acceptance_support(
             ACCEPTANCE_CRITERIA_FIELD,
             acceptance_field_cache,
         )
-    except RuntimeError:
+    except RuntimeError as ex:
+        _json_log(
+            logging.WARNING,
+            "acceptance_field_support_check_failed",
+            org=org,
+            project=project,
+            wit_type=wit_type,
+            detail=_runtime_error_detail(ex),
+        )
         return False
 
 
@@ -595,10 +708,10 @@ async def get_backlog_work_item(
             expand_relations=True,
         )
     except RuntimeError as ex:
-        detail = str(ex)
-        if detail.startswith("HTTP 404"):
+        detail = _runtime_error_detail(ex)
+        if "HTTP 404" in detail:
             raise HTTPException(status_code=404, detail=f"Work Item {work_item_id} nao encontrado.") from ex
-        raise HTTPException(status_code=400, detail=detail) from ex
+        _raise_http_400_with_log(ex, request, "get_backlog_work_item")
     return to_work_item_out(context["org"], context["project"], work_item)
 
 
@@ -622,7 +735,7 @@ async def create_epics(
             cache,
         )
     except RuntimeError as ex:
-        raise HTTPException(status_code=400, detail=str(ex)) from ex
+        _raise_http_400_with_log(ex, request, "create_epics")
     return BatchCreateResponse(org=context["org"], project=context["project"], created=created)
 
 
@@ -655,7 +768,7 @@ async def create_features_for_epic(
             forced_parent_id=epic_id,
         )
     except RuntimeError as ex:
-        raise HTTPException(status_code=400, detail=str(ex)) from ex
+        _raise_http_400_with_log(ex, request, "create_features_for_epic")
     return BatchCreateResponse(org=context["org"], project=context["project"], created=created)
 
 
@@ -679,7 +792,7 @@ async def create_features(
             cache,
         )
     except RuntimeError as ex:
-        raise HTTPException(status_code=400, detail=str(ex)) from ex
+        _raise_http_400_with_log(ex, request, "create_features")
     return BatchCreateResponse(org=context["org"], project=context["project"], created=created)
 
 
@@ -712,7 +825,7 @@ async def create_pbis_for_feature(
             forced_parent_id=feature_id,
         )
     except RuntimeError as ex:
-        raise HTTPException(status_code=400, detail=str(ex)) from ex
+        _raise_http_400_with_log(ex, request, "create_pbis_for_feature")
     return BatchCreateResponse(org=context["org"], project=context["project"], created=created)
 
 
@@ -736,7 +849,7 @@ async def create_pbis(
             cache,
         )
     except RuntimeError as ex:
-        raise HTTPException(status_code=400, detail=str(ex)) from ex
+        _raise_http_400_with_log(ex, request, "create_pbis")
     return BatchCreateResponse(org=context["org"], project=context["project"], created=created)
 
 
@@ -769,7 +882,7 @@ async def create_tasks_for_pbi(
             forced_parent_id=product_backlog_item_id,
         )
     except RuntimeError as ex:
-        raise HTTPException(status_code=400, detail=str(ex)) from ex
+        _raise_http_400_with_log(ex, request, "create_tasks_for_pbi")
     return BatchCreateResponse(org=context["org"], project=context["project"], created=created)
 
 
@@ -793,7 +906,7 @@ async def create_tasks(
             cache,
         )
     except RuntimeError as ex:
-        raise HTTPException(status_code=400, detail=str(ex)) from ex
+        _raise_http_400_with_log(ex, request, "create_tasks")
     return BatchCreateResponse(org=context["org"], project=context["project"], created=created)
 
 
