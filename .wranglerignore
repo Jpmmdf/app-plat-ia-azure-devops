@@ -9,3 +9,25 @@ __pycache__/
 *.pyo
 *.pyd
 .env
+
+# Non-runtime assets
+.git/
+.github/
+docs/
+site/
+examples/
+prompts/
+
+# Local tooling and tests
+tests/
+scripts/
+mkdocs.yml
+openapi.yaml
+openapi.json
+README.md
+create_epic.py
+create_scrum_tree.py
+generate_openapi.py
+requirements.local.txt
+requirements.docs.txt
+pyproject.toml
