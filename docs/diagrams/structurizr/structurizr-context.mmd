@@ -1,0 +1,21 @@
+graph LR
+  linkStyle default fill:#ffffff
+
+  subgraph diagram ["C1 - Contexto"]
+    style diagram fill:#ffffff,stroke:#ffffff
+
+    1["<div style='font-weight: bold'>Usuário de Produto/Engenharia</div><div style='font-size: 70%; margin-top: 0px'>[Person]</div><div style='font-size: 80%; margin-top:10px'>Solicita criação automatizada<br />de backlog.</div>"]
+    style 1 fill:#08427b,stroke:#052e56,color:#ffffff
+    2["<div style='font-weight: bold'>Custom GPT</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>Gera payloads segmentados por<br />tipo para execucao.</div>"]
+    style 2 fill:#1168bd,stroke:#0b4884,color:#ffffff
+    3["<div style='font-weight: bold'>Azure DevOps Boards</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>Sistema alvo para criação de<br />Work Items.</div>"]
+    style 3 fill:#1168bd,stroke:#0b4884,color:#ffffff
+    6["<div style='font-weight: bold'>ADO Scrum Bootstrap Gateway</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>Plataforma de automação de<br />backlog (API + Docs).</div>"]
+    style 6 fill:#1168bd,stroke:#0b4884,color:#ffffff
+
+    1-. "<div>Solicita geração de backlog</div><div style='font-size: 70%'></div>" .->2
+    1-. "<div>Executa criação por API</div><div style='font-size: 70%'></div>" .->6
+    2-. "<div>GET<br />/v1/backlog/work-items/{id} +<br />POST /v1/backlog/*</div><div style='font-size: 70%'></div>" .->6
+    6-. "<div>Consulta, cria e vincula Work<br />Items</div><div style='font-size: 70%'></div>" .->3
+
+  end

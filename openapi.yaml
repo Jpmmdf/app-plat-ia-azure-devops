@@ -1,4 +1,4 @@
-openapi: 3.1.0
+openapi: 3.0.3
 info:
   title: ADO Scrum Bootstrap Gateway
   version: 1.0.0
@@ -13,15 +13,41 @@ paths:
           content:
             application/json:
               schema: {}
-  /v1/scrum/execute:
+  /v1/backlog/work-items/{work_item_id}:
+    get:
+      summary: Get Backlog Work Item
+      operationId: get_backlog_work_item_v1_backlog_work_items__work_item_id__get
+      security:
+      - APIKeyHeader: []
+      parameters:
+      - name: work_item_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Work Item Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkItemOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/backlog/epics:
     post:
-      summary: Execute Scrum
-      operationId: execute_scrum_v1_scrum_execute_post
+      summary: Create Epics
+      operationId: create_epics_v1_backlog_epics_post
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PlanIn'
+              $ref: '#/components/schemas/CreateEpicsIn'
         required: true
       responses:
         '200':
@@ -29,7 +55,178 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExecuteResponse'
+                $ref: '#/components/schemas/BatchCreateResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - APIKeyHeader: []
+  /v1/backlog/epics/{epic_id}/features:
+    post:
+      summary: Create Features For Epic
+      operationId: create_features_for_epic_v1_backlog_epics__epic_id__features_post
+      security:
+      - APIKeyHeader: []
+      parameters:
+      - name: epic_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Epic Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFeaturesForEpicIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchCreateResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/backlog/features:
+    post:
+      summary: Create Features
+      operationId: create_features_v1_backlog_features_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFeaturesIn'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchCreateResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - APIKeyHeader: []
+  /v1/backlog/features/{feature_id}/product-backlog-items:
+    post:
+      summary: Create Pbis For Feature
+      operationId: create_pbis_for_feature_v1_backlog_features__feature_id__product_backlog_items_post
+      security:
+      - APIKeyHeader: []
+      parameters:
+      - name: feature_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Feature Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePbisForFeatureIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchCreateResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/backlog/product-backlog-items:
+    post:
+      summary: Create Pbis
+      operationId: create_pbis_v1_backlog_product_backlog_items_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePbisIn'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchCreateResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - APIKeyHeader: []
+  /v1/backlog/product-backlog-items/{product_backlog_item_id}/tasks:
+    post:
+      summary: Create Tasks For Pbi
+      operationId: create_tasks_for_pbi_v1_backlog_product_backlog_items__product_backlog_item_id__tasks_post
+      security:
+      - APIKeyHeader: []
+      parameters:
+      - name: product_backlog_item_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Product Backlog Item Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTasksForPbiIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchCreateResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/backlog/tasks:
+    post:
+      summary: Create Tasks
+      operationId: create_tasks_v1_backlog_tasks_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTasksIn'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchCreateResponse'
         '422':
           description: Validation Error
           content:
@@ -40,6 +237,128 @@ paths:
       - APIKeyHeader: []
 components:
   schemas:
+    BatchCreateResponse:
+      properties:
+        org:
+          type: string
+          title: Org
+        project:
+          type: string
+          title: Project
+        created:
+          items:
+            $ref: '#/components/schemas/CreatedItemOut'
+          type: array
+          title: Created
+      type: object
+      required:
+      - org
+      - project
+      - created
+      title: BatchCreateResponse
+    CreateEpicsIn:
+      properties:
+        defaults:
+          $ref: '#/components/schemas/DefaultsIn'
+        epics:
+          items:
+            $ref: '#/components/schemas/EpicCreateIn'
+          type: array
+          title: Epics
+      type: object
+      title: CreateEpicsIn
+    CreateFeaturesForEpicIn:
+      properties:
+        defaults:
+          $ref: '#/components/schemas/DefaultsIn'
+        features:
+          items:
+            $ref: '#/components/schemas/FeatureCreateChildIn'
+          type: array
+          title: Features
+      type: object
+      title: CreateFeaturesForEpicIn
+    CreateFeaturesIn:
+      properties:
+        defaults:
+          $ref: '#/components/schemas/DefaultsIn'
+        features:
+          items:
+            $ref: '#/components/schemas/FeatureCreateIn'
+          type: array
+          title: Features
+      type: object
+      title: CreateFeaturesIn
+    CreatePbisForFeatureIn:
+      properties:
+        defaults:
+          $ref: '#/components/schemas/DefaultsIn'
+        product_backlog_items:
+          items:
+            $ref: '#/components/schemas/PbiCreateChildIn'
+          type: array
+          title: Product Backlog Items
+      type: object
+      title: CreatePbisForFeatureIn
+    CreatePbisIn:
+      properties:
+        defaults:
+          $ref: '#/components/schemas/DefaultsIn'
+        pbis:
+          items:
+            $ref: '#/components/schemas/PbiCreateIn'
+          type: array
+          title: Pbis
+      type: object
+      title: CreatePbisIn
+    CreateTasksForPbiIn:
+      properties:
+        defaults:
+          $ref: '#/components/schemas/DefaultsIn'
+        tasks:
+          items:
+            $ref: '#/components/schemas/TaskCreateChildIn'
+          type: array
+          title: Tasks
+      type: object
+      title: CreateTasksForPbiIn
+    CreateTasksIn:
+      properties:
+        defaults:
+          $ref: '#/components/schemas/DefaultsIn'
+        tasks:
+          items:
+            $ref: '#/components/schemas/TaskCreateIn'
+          type: array
+          title: Tasks
+      type: object
+      title: CreateTasksIn
+    CreatedItemOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        type:
+          type: string
+          title: Type
+        title:
+          type: string
+          title: Title
+        url:
+          type: string
+          title: Url
+        parent_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Parent Id
+      type: object
+      required:
+      - id
+      - type
+      - title
+      - url
+      title: CreatedItemOut
     DefaultsIn:
       properties:
         area_path:
@@ -59,7 +378,7 @@ components:
           title: Tags
       type: object
       title: DefaultsIn
-    EpicIn:
+    EpicCreateIn:
       properties:
         title:
           type: string
@@ -77,34 +396,26 @@ components:
             type: array
           - type: 'null'
           title: Acceptance Criteria
-        features:
-          items:
-            $ref: '#/components/schemas/FeatureIn'
-          type: array
-          title: Features
+        area_path:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Area Path
+        iteration_path:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Iteration Path
+        tags:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Tags
       type: object
       required:
       - title
-      title: EpicIn
-    ExecuteResponse:
-      properties:
-        org:
-          type: string
-          title: Org
-        project:
-          type: string
-          title: Project
-        created:
-          additionalProperties: true
-          type: object
-          title: Created
-      type: object
-      required:
-      - org
-      - project
-      - created
-      title: ExecuteResponse
-    FeatureIn:
+      title: EpicCreateIn
+    FeatureCreateChildIn:
       properties:
         title:
           type: string
@@ -122,15 +433,66 @@ components:
             type: array
           - type: 'null'
           title: Acceptance Criteria
-        pbis:
-          items:
-            $ref: '#/components/schemas/PbiIn'
-          type: array
-          title: Pbis
+        area_path:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Area Path
+        iteration_path:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Iteration Path
+        tags:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Tags
       type: object
       required:
       - title
-      title: FeatureIn
+      title: FeatureCreateChildIn
+    FeatureCreateIn:
+      properties:
+        title:
+          type: string
+          title: Title
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        acceptance_criteria:
+          anyOf:
+          - type: string
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Acceptance Criteria
+        area_path:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Area Path
+        iteration_path:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Iteration Path
+        tags:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Tags
+        parent_id:
+          type: integer
+          title: Parent Id
+      type: object
+      required:
+      - title
+      - parent_id
+      title: FeatureCreateIn
     HTTPValidationError:
       properties:
         detail:
@@ -140,7 +502,7 @@ components:
           title: Detail
       type: object
       title: HTTPValidationError
-    PbiIn:
+    PbiCreateChildIn:
       properties:
         title:
           type: string
@@ -158,27 +520,26 @@ components:
             type: array
           - type: 'null'
           title: Acceptance Criteria
-        tasks:
-          items:
-            $ref: '#/components/schemas/TaskIn'
-          type: array
-          title: Tasks
+        area_path:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Area Path
+        iteration_path:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Iteration Path
+        tags:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Tags
       type: object
       required:
       - title
-      title: PbiIn
-    PlanIn:
-      properties:
-        defaults:
-          $ref: '#/components/schemas/DefaultsIn'
-        epics:
-          items:
-            $ref: '#/components/schemas/EpicIn'
-          type: array
-          title: Epics
-      type: object
-      title: PlanIn
-    TaskIn:
+      title: PbiCreateChildIn
+    PbiCreateIn:
       properties:
         title:
           type: string
@@ -196,10 +557,107 @@ components:
             type: array
           - type: 'null'
           title: Acceptance Criteria
+        area_path:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Area Path
+        iteration_path:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Iteration Path
+        tags:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Tags
+        parent_id:
+          type: integer
+          title: Parent Id
       type: object
       required:
       - title
-      title: TaskIn
+      - parent_id
+      title: PbiCreateIn
+    TaskCreateChildIn:
+      properties:
+        title:
+          type: string
+          title: Title
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        acceptance_criteria:
+          anyOf:
+          - type: string
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Acceptance Criteria
+        area_path:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Area Path
+        iteration_path:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Iteration Path
+        tags:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Tags
+      type: object
+      required:
+      - title
+      title: TaskCreateChildIn
+    TaskCreateIn:
+      properties:
+        title:
+          type: string
+          title: Title
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        acceptance_criteria:
+          anyOf:
+          - type: string
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Acceptance Criteria
+        area_path:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Area Path
+        iteration_path:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Iteration Path
+        tags:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Tags
+        parent_id:
+          type: integer
+          title: Parent Id
+      type: object
+      required:
+      - title
+      - parent_id
+      title: TaskCreateIn
     ValidationError:
       properties:
         loc:
@@ -221,6 +679,75 @@ components:
       - msg
       - type
       title: ValidationError
+    WorkItemOut:
+      properties:
+        org:
+          type: string
+          title: Org
+        project:
+          type: string
+          title: Project
+        id:
+          type: integer
+          title: Id
+        type:
+          type: string
+          title: Type
+        title:
+          type: string
+          title: Title
+        url:
+          type: string
+          title: Url
+        state:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: State
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        acceptance_criteria:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Acceptance Criteria
+        area_path:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Area Path
+        iteration_path:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Iteration Path
+        tags:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Tags
+        parent_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Parent Id
+        child_ids:
+          items:
+            type: integer
+          type: array
+          title: Child Ids
+      type: object
+      required:
+      - org
+      - project
+      - id
+      - type
+      - title
+      - url
+      title: WorkItemOut
   securitySchemes:
     APIKeyHeader:
       type: apiKey

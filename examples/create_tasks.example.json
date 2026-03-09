@@ -1,0 +1,18 @@
+{
+  "defaults": {
+    "area_path": null,
+    "iteration_path": null,
+    "tags": "automation;azure-devops"
+  },
+  "tasks": [
+    {
+      "parent_id": 100002,
+      "title": "Implementar validacao de X-API-Key",
+      "description": "## Escopo tecnico\nGarantir autenticacao em todos os endpoints segmentados.",
+      "acceptance_criteria": [
+        "Requisicao sem chave retorna 401",
+        "Requisicao com chave valida prossegue"
+      ]
+    }
+  ]
+}

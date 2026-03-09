@@ -1,0 +1,18 @@
+{
+  "defaults": {
+    "area_path": null,
+    "iteration_path": null,
+    "tags": "automation;azure-devops"
+  },
+  "epics": [
+    {
+      "title": "API de Orquestracao de Backlog",
+      "description": "## Contexto\nCentralizar criacao de backlog por API segmentada.",
+      "acceptance_criteria": [
+        "Criar epicos por endpoint dedicado",
+        "Retornar ids e urls dos itens criados",
+        "Preservar markdown nos campos multilinha"
+      ]
+    }
+  ]
+}

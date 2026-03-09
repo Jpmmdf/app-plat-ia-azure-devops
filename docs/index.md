@@ -1,36 +1,37 @@
 # ADO Scrum Bootstrap Gateway
 
-Plataforma para criação automatizada de backlog no Azure DevOps com API, CLI, prompts e deploy em Cloudflare Workers.
+Plataforma para criacao automatizada de backlog no Azure DevOps com API, CLI, prompts e deploy em Cloudflare Workers.
 
 ## O que este projeto resolve
 
-- Padroniza a criação de Epic, Feature, PBI e Task.
-- Reduz criação manual no board.
-- Mantém critérios de aceite e formatação markdown de forma consistente.
-- Oferece contratos claros para integração com IA/Custom GPT.
+- Padroniza a criacao de Epic, Feature, PBI e Task.
+- Reduz criacao manual no board.
+- Mantem criterios de aceite e markdown de forma consistente.
+- Oferece contratos claros para integracao com IA/Custom GPT.
 
 ## Principais componentes
 
-- `server.py`: API FastAPI (`/v1/scrum/execute`).
-- `create_scrum_tree.py`: CLI para criação hierárquica e itens independentes.
-- `create_epic.py`: CLI para criação unitária.
-- `generate_openapi.py`: geração de `openapi.yaml` e `openapi.json`.
-- `docs/user-guides`: prompts API-first para geração de payload.
-- `prompts/custom-gpt`: prompt pronto para ingestão no Custom GPT.
+- `server.py`: API FastAPI segmentada por tipo de item.
+- `create_scrum_tree.py`: CLI para criacao hierarquica e itens independentes.
+- `create_epic.py`: CLI para criacao unitaria.
+- `generate_openapi.py`: geracao de `openapi.yaml` e `openapi.json`.
+- `docs/user-guides`: prompts API-first para geracao de payload.
+- `prompts/custom-gpt`: prompt pronto para ingestao no Custom GPT.
 
-## Início rápido
+## Inicio rapido
 
-1. Configure variáveis de ambiente (`.env.example` -> `.env`).
+1. Configure variaveis de ambiente (`.env.example` -> `.env`).
 2. Execute a API localmente.
-3. Gere e valide o payload no formato `PlanIn`.
-4. Envie para `/v1/scrum/execute`.
+3. Gere os payloads por tipo (`epics`, `features`, `pbis`, `tasks`).
+4. Execute chamadas em etapas nas rotas segmentadas.
 
-## Navegação
+## Navegacao
 
-- [Visão Geral](visao-geral.md)
+- [Visao Geral](visao-geral.md)
 - [Arquitetura](arquitetura.md)
+- [Arquitetura C4 (Structurizr)](arquitetura-c4.md)
 - [API](api.md)
-- [Operação](operacao.md)
-- [Segurança](security.md)
+- [Operacao](operacao.md)
+- [Seguranca](security.md)
 - [Deploy (Cloudflare + GitHub Actions)](deploy-cloudflare-github-actions.md)
 - [Custom GPT](custom-gpt.md)

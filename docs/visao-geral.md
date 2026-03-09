@@ -1,46 +1,58 @@
-# Visão Geral
+# Visao Geral
 
 ## Fluxo ponta a ponta
 
-1. Usuário descreve demanda de negócio.
-2. IA (prompts API-first) gera payload JSON no schema `PlanIn`.
-3. Payload é enviado para `POST /v1/scrum/execute`.
-4. API cria itens no Azure DevOps em hierarquia:
-   - Epic -> Feature -> Product Backlog Item -> Task
-5. Resposta retorna IDs e URLs dos itens criados.
+1. Usuario descreve demanda de negocio.
+2. Se ja existir item no board, GPT consulta `GET /v1/backlog/work-items/{id}`.
+3. GPT gera payload do proximo nivel.
+4. API cria filhos via endpoint nested com ID no path.
+
+Exemplos de criacao nested:
+
+- `POST /v1/backlog/epics/{epic_id}/features`
+- `POST /v1/backlog/features/{feature_id}/product-backlog-items`
+- `POST /v1/backlog/product-backlog-items/{product_backlog_item_id}/tasks`
 
 ## Modos de uso
 
-- **API**: integração de sistemas e automações.
-- **CLI**: operação manual, bootstrap e troubleshooting.
-- **Custom GPT**: geração guiada de payload e execução assistida.
+- **API**: integracao de sistemas e automacoes.
+- **CLI**: operacao manual, bootstrap e troubleshooting.
+- **Custom GPT**: geracao guiada de payload e execucao assistida.
 
 ## Contratos principais
 
-- Entrada da API: `PlanIn`
-- Modelos hierárquicos:
-  - `EpicIn`
-  - `FeatureIn`
-  - `PbiIn`
-  - `TaskIn`
+Consulta:
 
-Campos suportados em todos os níveis:
+- `WorkItemOut` em `GET /v1/backlog/work-items/{id}`
 
-- `title` (obrigatório)
+Criacao:
+
+- `CreateEpicsIn`
+- `CreateFeaturesForEpicIn` (nested)
+- `CreatePbisForFeatureIn` (nested)
+- `CreateTasksForPbiIn` (nested)
+- Endpoints diretos com `parent_id` permanecem disponiveis.
+
+Campos suportados em todos os niveis:
+
+- `title` (obrigatorio)
 - `description` (markdown)
 - `acceptance_criteria` (string ou lista)
+- `area_path` (opcional)
+- `iteration_path` (opcional)
+- `tags` (opcional)
 
-## Persistência no Azure DevOps
+## Persistencia no Azure DevOps
 
 - `System.Title`
 - `System.Description`
 - `Microsoft.VSTS.Common.AcceptanceCriteria` (quando suportado)
-- Fallback de critérios para `Description` quando o campo não existir (ex.: Task)
+- Fallback de criterios para `Description` quando o campo nao existir (ex.: Task)
 - Formato multiline em markdown via `multilineFieldsFormat`
 
 ## Artefatos do projeto
 
 - `openapi.yaml` / `openapi.json`: contrato da API.
-- `docs/user-guides`: prompts por nível (epic, feature, pbi, task, orquestração).
+- `docs/user-guides`: prompts por nivel (epic, feature, pbi, task, orquestracao).
 - `prompts/custom-gpt/custom-gpt-system-prompt.md`: prompt para Custom GPT.
 - `.github/workflows/deploy-cloudflare.yml`: pipeline de deploy.

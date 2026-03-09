@@ -2,81 +2,44 @@
 
 ## Objetivo
 
-Transformar uma necessidade de negócio em um objeto `FeatureIn` compatível com a API:
+Gerar payload para criar features em um Epic existente.
 
-- Endpoint: `POST /v1/scrum/execute`
-- Caminho no payload: `epics[n].features[]`
+- Consulta previa: `GET /v1/backlog/work-items/{epic_id}`
+- Criacao: `POST /v1/backlog/epics/{epic_id}/features`
 
----
+## Contrato de saida (body)
 
-## Contrato de saída (obrigatório)
-
-Retorne **somente JSON válido** no formato:
+Retorne somente JSON valido:
 
 ```json
 {
-  "title": "string",
-  "description": "string markdown",
-  "acceptance_criteria": [
-    "criterio 1",
-    "criterio 2"
-  ],
-  "pbis": []
+  "defaults": {
+    "area_path": null,
+    "iteration_path": null,
+    "tags": "string ou null"
+  },
+  "features": [
+    {
+      "title": "string",
+      "description": "string markdown",
+      "acceptance_criteria": [
+        "criterio 1",
+        "criterio 2"
+      ]
+    }
+  ]
 }
 ```
-
----
 
 ## Regras
 
-1. Não usar campos fora do schema `FeatureIn`.
-2. `title` direto e orientado a valor.
-3. `description` em markdown, com contexto de produto + impacto técnico relevante.
-4. `acceptance_criteria` como lista objetiva e testável.
-5. Retornar `pbis` vazio quando a decomposição em PBIs ainda não tiver sido feita.
-
----
-
-## Estrutura recomendada para `description`
-
-- `## Contexto`
-- `## Problema a Resolver`
-- `## Objetivo da Feature`
-- `## Escopo Funcional`
-- `## Requisitos Nao Funcionais`
-- `## Dependências`
-- `## Riscos`
-- `## Indicadores de Sucesso`
-
----
-
-## Mapeamento para API
-
-- `title` -> `FeatureIn.title`
-- `description` -> `FeatureIn.description` (`System.Description`)
-- `acceptance_criteria` -> `FeatureIn.acceptance_criteria` (campo de critérios quando suportado, fallback em `Description`)
-- `pbis` -> `FeatureIn.pbis`
-
----
-
-## Exemplo para inserir no payload
-
-```json
-{
-  "title": "Padronizar criacao de Work Items via API",
-  "description": "## Contexto\\n...",
-  "acceptance_criteria": [
-    "Fluxo de criacao suportado para Epic, Feature, PBI e Task",
-    "Erros retornados com mensagens operacionais claras"
-  ],
-  "pbis": []
-}
-```
-
----
+1. Nao incluir `parent_id` no body do endpoint nested.
+2. `title` orientado a valor.
+3. `description` em markdown.
+4. `acceptance_criteria` objetiva e testavel.
 
 ## Entrada
 
 ```text
-[COLE AQUI A NECESSIDADE DA FEATURE]
+[COLE AQUI A NECESSIDADE DA FEATURE + O ID DO EPIC]
 ```

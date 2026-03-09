@@ -2,83 +2,43 @@
 
 ## Objetivo
 
-Quebrar uma Feature em itens `PbiIn` compatíveis com a API:
+Gerar payload para criar PBIs em uma Feature existente.
 
-- Endpoint: `POST /v1/scrum/execute`
-- Caminho no payload: `epics[n].features[m].pbis[]`
+- Consulta previa: `GET /v1/backlog/work-items/{feature_id}`
+- Criacao: `POST /v1/backlog/features/{feature_id}/product-backlog-items`
 
----
+## Contrato de saida (body)
 
-## Contrato de saída (obrigatório)
-
-Retorne **somente JSON válido** no formato:
+Retorne somente JSON valido:
 
 ```json
-[
-  {
-    "title": "string",
-    "description": "string markdown",
-    "acceptance_criteria": [
-      "criterio 1",
-      "criterio 2"
-    ],
-    "tasks": []
-  }
-]
+{
+  "defaults": {
+    "area_path": null,
+    "iteration_path": null,
+    "tags": "string ou null"
+  },
+  "product_backlog_items": [
+    {
+      "title": "string",
+      "description": "string markdown",
+      "acceptance_criteria": [
+        "criterio 1",
+        "criterio 2"
+      ]
+    }
+  ]
+}
 ```
-
----
 
 ## Regras
 
-1. Retornar uma lista de PBIs (mesmo que contenha apenas 1 item).
-2. Não incluir campos fora do schema `PbiIn`.
-3. Cada PBI deve ser entregável e testável de forma independente.
-4. `acceptance_criteria` deve ser objetivo e verificável.
-5. `tasks` deve começar vazio quando as tarefas ainda não foram decompostas.
-
----
-
-## Estrutura recomendada para `description`
-
-- `## User Story`
-- `## Contexto Funcional`
-- `## Regras de Negocio`
-- `## Dependências`
-- `## Riscos`
-- `## Indicadores de Sucesso`
-
----
-
-## Mapeamento para API
-
-- `title` -> `PbiIn.title`
-- `description` -> `PbiIn.description`
-- `acceptance_criteria` -> `PbiIn.acceptance_criteria`
-- `tasks` -> `PbiIn.tasks`
-
----
-
-## Exemplo de saída
-
-```json
-[
-  {
-    "title": "Validar payload do endpoint de execucao",
-    "description": "## User Story\\n...",
-    "acceptance_criteria": [
-      "Payload invalido retorna erro de validacao",
-      "Payload valido cria item sem inconsistencias"
-    ],
-    "tasks": []
-  }
-]
-```
-
----
+1. Nao incluir `parent_id` no body do endpoint nested.
+2. Cada PBI deve ser entregavel e testavel.
+3. `acceptance_criteria` verificavel.
 
 ## Entrada
 
 ```text
-[COLE AQUI A FEATURE QUE SERA FATIADA EM PBIS]
+[COLE AQUI A FEATURE + O ID DA FEATURE]
 ```

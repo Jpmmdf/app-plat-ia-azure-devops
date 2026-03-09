@@ -1,0 +1,18 @@
+{
+  "defaults": {
+    "area_path": null,
+    "iteration_path": null,
+    "tags": "automation;azure-devops"
+  },
+  "features": [
+    {
+      "parent_id": 100000,
+      "title": "Orquestracao por tipo de item",
+      "description": "## Escopo\nPermitir criacao de features desacoplada da arvore completa.",
+      "acceptance_criteria": [
+        "Feature criada vinculada ao epic pai",
+        "Descricao em markdown persistida no board"
+      ]
+    }
+  ]
+}

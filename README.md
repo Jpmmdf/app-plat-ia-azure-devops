@@ -1,13 +1,13 @@
 # app-plat-ia-azure-devops
 
-Gateway/API para criação automatizada de backlog no Azure DevOps (Epic -> Feature -> PBI -> Task), com suporte a:
+Gateway/API para criacao automatizada de backlog no Azure DevOps com suporte a Markdown e criterios de aceite.
 
-- execução via API FastAPI (`/v1/scrum/execute`)
-- execução via CLI (`create_epic.py` e `create_scrum_tree.py`)
-- critérios de aceite por item
-- persistência de campos multilinha em Markdown
-- documentação e prompts para uso com IA/Custom GPT
-- deploy em Cloudflare Workers
+## O que este projeto resolve
+
+- Padroniza criacao de Epic, Feature, PBI e Task.
+- Reduz criacao manual no board.
+- Permite continuar backlog a partir de item ja existente no Azure DevOps (via ID).
+- Oferece contratos claros para integracao com IA/Custom GPT.
 
 ## Estrutura do projeto
 
@@ -15,18 +15,11 @@ Gateway/API para criação automatizada de backlog no Azure DevOps (Epic -> Feat
 .
 ├── .github/workflows/deploy-cloudflare.yml
 ├── docs/
-│   ├── index.md
-│   ├── visao-geral.md
-│   ├── arquitetura.md
-│   ├── api.md
-│   ├── operacao.md
-│   ├── security.md
-│   ├── deploy-cloudflare-github-actions.md
-│   ├── custom-gpt.md
-│   ├── prompts/
-│   └── user-guides/
 ├── prompts/custom-gpt/custom-gpt-system-prompt.md
-├── examples/planin.example.json
+├── examples/create_epics.example.json
+├── examples/create_features.example.json
+├── examples/create_pbis.example.json
+├── examples/create_tasks.example.json
 ├── server.py
 ├── create_epic.py
 ├── create_scrum_tree.py
@@ -42,9 +35,7 @@ Gateway/API para criação automatizada de backlog no Azure DevOps (Epic -> Feat
 - Conta no Azure DevOps com PAT (`Work Items Read & write`)
 - Conta Cloudflare (para deploy Worker)
 
-## Configuração local
-
-1. Criar ambiente virtual e instalar dependências:
+## Configuracao local
 
 ```bash
 python -m venv .venv
@@ -53,13 +44,11 @@ pip install -r requirements.local.txt
 pip install pyyaml
 ```
 
-2. Criar arquivo `.env` a partir de `.env.example`:
-
 ```bash
 cp .env.example .env
 ```
 
-3. Preencher variáveis:
+Variaveis necessarias:
 
 - `AZDO_ORG`
 - `AZDO_PROJECT`
@@ -73,76 +62,46 @@ source .env
 ./.venv/bin/python -m uvicorn server:app --host 127.0.0.1 --port 8000
 ```
 
-Endpoints:
+## Endpoints principais
+
+Consulta:
 
 - `GET /health`
-- `POST /v1/scrum/execute`
+- `GET /v1/backlog/work-items/{work_item_id}`
 
-## Exemplo de payload da API
+Criacao nested (recomendado):
 
-Arquivo de exemplo: [`examples/planin.example.json`](examples/planin.example.json)
+- `POST /v1/backlog/epics/{epic_id}/features`
+- `POST /v1/backlog/features/{feature_id}/product-backlog-items`
+- `POST /v1/backlog/product-backlog-items/{product_backlog_item_id}/tasks`
 
-```bash
-curl -X POST "http://127.0.0.1:8000/v1/scrum/execute" \
-  -H "Content-Type: application/json" \
-  -H "X-API-Key: $GATEWAY_API_KEY" \
-  --data @examples/planin.example.json
-```
+Criacao direta (bulk):
 
-## Uso via CLI
+- `POST /v1/backlog/epics`
+- `POST /v1/backlog/features`
+- `POST /v1/backlog/product-backlog-items`
+- `POST /v1/backlog/tasks`
 
-Criar item único:
+## Fluxo recomendado com ID existente
 
-```bash
-./.venv/bin/python create_scrum_tree.py \
-  --type "Product Backlog Item" \
-  --title "Meu PBI" \
-  --parent-id 123
-```
-
-Criar epic unitário:
-
-```bash
-./.venv/bin/python create_epic.py \
-  --title "Meu Epic" \
-  --description "## Contexto\n..."
-```
+1. Usuario informa ID (ex.: Epic criado manualmente).
+2. GPT consulta `GET /v1/backlog/work-items/{id}`.
+3. GPT cria filhos no endpoint nested correto.
 
 ## OpenAPI
-
-Gerar especificações:
 
 ```bash
 ./.venv/bin/python generate_openapi.py --output openapi.yaml
 ./.venv/bin/python generate_openapi.py --output openapi.json --format json
 ```
 
-## Deploy Cloudflare (GitHub Actions)
+## Documentacao
 
-Workflow: [`.github/workflows/deploy-cloudflare.yml`](.github/workflows/deploy-cloudflare.yml)
-
-Secrets necessários no GitHub:
-
-- `CLOUDFLARE_API_TOKEN`
-- `CLOUDFLARE_ACCOUNT_ID`
-- `AZDO_ORG`
-- `AZDO_PROJECT`
-- `AZDO_PAT`
-- `GATEWAY_API_KEY`
-
-## Segurança e boas práticas
-
-- Não versionar `.env`, `.dev.vars` e caches locais.
-- Não hardcodar credenciais no código ou `wrangler.toml`.
-- Usar secrets no GitHub Actions/Cloudflare.
-- Revisar e regenerar OpenAPI após mudanças de contrato.
-
-## Documentação completa
-
-- [Visão geral](docs/visao-geral.md)
+- [Visao geral](docs/visao-geral.md)
 - [Arquitetura](docs/arquitetura.md)
+- [Arquitetura C4 (Structurizr)](docs/arquitetura-c4.md)
 - [API](docs/api.md)
-- [Operação](docs/operacao.md)
-- [Segurança](docs/security.md)
+- [Operacao](docs/operacao.md)
+- [Seguranca](docs/security.md)
 - [Deploy Cloudflare via GitHub Actions](docs/deploy-cloudflare-github-actions.md)
 - [Custom GPT](docs/custom-gpt.md)

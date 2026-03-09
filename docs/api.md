@@ -1,42 +1,59 @@
 # API
 
-## Endpoint principal
+## Endpoints
 
-`POST /v1/scrum/execute`
+Consulta:
+
+- `GET /v1/backlog/work-items/{work_item_id}`
+
+Criacao recomendada (nested por pai):
+
+- `POST /v1/backlog/epics/{epic_id}/features`
+- `POST /v1/backlog/features/{feature_id}/product-backlog-items`
+- `POST /v1/backlog/product-backlog-items/{product_backlog_item_id}/tasks`
+
+Criacao direta (bulk):
+
+- `POST /v1/backlog/epics`
+- `POST /v1/backlog/features`
+- `POST /v1/backlog/product-backlog-items`
+- `POST /v1/backlog/tasks`
 
 ### Headers
 
-- `X-API-Key`: obrigatório para autenticação.
+- `X-API-Key`: obrigatorio para autenticacao.
 
-### Request body
+## Fluxo recomendado para Custom GPT
 
-Schema `PlanIn`:
+1. Receber o ID de item existente do usuario.
+2. Consultar `GET /v1/backlog/work-items/{work_item_id}`.
+3. Criar proximo nivel com endpoint nested correspondente.
+4. Repetir para os niveis seguintes.
 
-- `defaults`:
-  - `area_path`
-  - `iteration_path`
-  - `tags`
-- `epics[]`:
-  - `title`
-  - `description`
-  - `acceptance_criteria`
-  - `features[]`
+## Exemplo: usuario passou ID de Epic
 
-Composição aninhada:
+### 1) Consultar o epic
 
-- `features[]` -> `pbis[]` -> `tasks[]`
-- Todos os níveis aceitam:
-  - `title`
-  - `description`
-  - `acceptance_criteria`
+`GET /v1/backlog/work-items/12345`
 
-### Response
+Response (exemplo):
 
-- `org`
-- `project`
-- `created` com IDs e URLs por nível criado.
+```json
+{
+  "org": "minha-org",
+  "project": "meu-projeto",
+  "id": 12345,
+  "type": "Epic",
+  "title": "Automacao de backlog",
+  "url": "https://dev.azure.com/...",
+  "parent_id": null,
+  "child_ids": []
+}
+```
 
-## Exemplo
+### 2) Criar features nesse epic
+
+`POST /v1/backlog/epics/12345/features`
 
 ```json
 {
@@ -45,19 +62,39 @@ Composição aninhada:
     "iteration_path": null,
     "tags": "automation;api"
   },
-  "epics": [
+  "features": [
     {
-      "title": "Automacao de backlog",
+      "title": "API de orquestracao",
       "description": "## Contexto\n...",
       "acceptance_criteria": [
-        "Critério 1",
-        "Critério 2"
-      ],
-      "features": []
+        "Criar features via endpoint nested"
+      ]
     }
   ]
 }
 ```
+
+## Schemas de criacao
+
+Todos os endpoints de criacao aceitam `defaults`:
+
+- `area_path`
+- `iteration_path`
+- `tags`
+
+Em endpoints nested, o pai vem no path.
+Em endpoints diretos de filhos, `parent_id` e obrigatorio no body.
+
+## Response de criacao
+
+- `org`
+- `project`
+- `created[]` com:
+  - `id`
+  - `type`
+  - `title`
+  - `url`
+  - `parent_id` (quando aplicavel)
 
 ## OpenAPI
 

@@ -8,6 +8,7 @@ nav:
   - Home: index.md
   - Visão Geral: visao-geral.md
   - Arquitetura: arquitetura.md
+  - Arquitetura C4 (Structurizr): arquitetura-c4.md
   - API: api.md
   - Operação: operacao.md
   - Segurança: security.md
@@ -38,6 +39,7 @@ markdown_extensions:
   - codehilite:
       linenums: true
   - attr_list
+  - pymdownx.snippets
   - pymdownx.superfences:
         # make exceptions to highlighting of code:
       custom_fences:

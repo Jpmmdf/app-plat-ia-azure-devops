@@ -1,0 +1,29 @@
+graph LR
+  linkStyle default fill:#ffffff
+
+  subgraph diagram ["C2 - Containers"]
+    style diagram fill:#ffffff,stroke:#ffffff
+
+    1["<div style='font-weight: bold'>Usuário de Produto/Engenharia</div><div style='font-size: 70%; margin-top: 0px'>[Person]</div><div style='font-size: 80%; margin-top:10px'>Solicita criação automatizada<br />de backlog.</div>"]
+    style 1 fill:#08427b,stroke:#052e56,color:#ffffff
+    2["<div style='font-weight: bold'>Custom GPT</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>Gera payloads segmentados por<br />tipo para execucao.</div>"]
+    style 2 fill:#1168bd,stroke:#0b4884,color:#ffffff
+    3["<div style='font-weight: bold'>Azure DevOps Boards</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>Sistema alvo para criação de<br />Work Items.</div>"]
+    style 3 fill:#1168bd,stroke:#0b4884,color:#ffffff
+
+    subgraph 6 ["ADO Scrum Bootstrap Gateway"]
+      style 6 fill:#ffffff,stroke:#0b4884,color:#0b4884
+
+      14["<div style='font-weight: bold'>Documentação e Prompts</div><div style='font-size: 70%; margin-top: 0px'>[Container: MkDocs + Markdown]</div><div style='font-size: 80%; margin-top:10px'>Guia operacional e prompts<br />API-first para IA.</div>"]
+      style 14 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      7["<div style='font-weight: bold'>API Worker (FastAPI)</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python + FastAPI]</div><div style='font-size: 80%; margin-top:10px'>Expoe consulta de item por ID<br />e criacao de backlog por<br />endpoints nested.</div>"]
+      style 7 fill:#438dd5,stroke:#2e6295,color:#ffffff
+    end
+
+    1-. "<div>Solicita geração de backlog</div><div style='font-size: 70%'></div>" .->2
+    1-. "<div>Executa criação por API</div><div style='font-size: 70%'></div>" .->7
+    1-. "<div>Consulta documentação</div><div style='font-size: 70%'></div>" .->14
+    2-. "<div>GET<br />/v1/backlog/work-items/{id} +<br />POST /v1/backlog/*</div><div style='font-size: 70%'></div>" .->7
+    7-. "<div>Consulta, cria e vincula Work<br />Items</div><div style='font-size: 70%'></div>" .->3
+
+  end

@@ -1,22 +1,31 @@
 # Custom GPT
 
-## Arquivo de prompt para ingestão
+## Arquivo de prompt para ingestao
 
 Use:
 
 - `prompts/custom-gpt/custom-gpt-system-prompt.md`
 
-Esse prompt foi projetado para gerar payloads no schema da API (`PlanIn`) e executar fluxo Epic -> Feature -> PBI -> Task.
+Esse prompt foi ajustado para fluxo por contexto de ID existente.
 
-## Configuração recomendada no Custom GPT
+## Fluxo recomendado na Action
 
-1. Copiar o conteúdo do arquivo acima para o campo de instruções do GPT.
-2. Adicionar Action com o OpenAPI do projeto (`openapi.json`).
-3. Configurar autenticação da action com header `X-API-Key`.
-4. Testar com payload mínimo e depois com payload completo.
+1. Usuario informa um ID existente (Epic, Feature ou PBI).
+2. GPT consulta `GET /v1/backlog/work-items/{work_item_id}`.
+3. GPT cria os itens filhos via endpoint nested correspondente:
+   - `POST /v1/backlog/epics/{epic_id}/features`
+   - `POST /v1/backlog/features/{feature_id}/product-backlog-items`
+   - `POST /v1/backlog/product-backlog-items/{product_backlog_item_id}/tasks`
+
+## Configuracao recomendada
+
+1. Copiar o conteudo do prompt para o campo de instrucoes do GPT.
+2. Adicionar Action com `openapi.json`.
+3. Configurar autenticacao com header `X-API-Key`.
+4. Testar um caso com Epic criado manualmente e criacao de features a partir do ID.
 
 ## Resultado esperado
 
-- Saída estritamente em JSON válido para ingestão.
-- Compatível com `POST /v1/scrum/execute`.
-- Sem campos fora do contrato da API.
+- GPT consegue consultar contexto do item por ID.
+- GPT gera payload correto para criar filhos no endpoint nested.
+- Sem necessidade de informar `parent_id` no body quando usar endpoints nested.

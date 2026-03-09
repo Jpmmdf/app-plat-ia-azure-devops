@@ -2,16 +2,31 @@
 
 ## Objetivo
 
-Gerar um payload completo e pronto para ingestao pela API:
+Gerar payloads para criacao de backlog por etapas, com suporte a ID existente.
 
-- Endpoint: `POST /v1/scrum/execute`
-- Schema alvo: `PlanIn`
+Endpoints usados:
 
----
+- Consulta: `GET /v1/backlog/work-items/{work_item_id}`
+- Criacao nested:
+  - `POST /v1/backlog/epics/{epic_id}/features`
+  - `POST /v1/backlog/features/{feature_id}/product-backlog-items`
+  - `POST /v1/backlog/product-backlog-items/{product_backlog_item_id}/tasks`
 
-## Contrato de saída (obrigatório)
+## Regras
 
-Retorne **somente JSON válido** no formato:
+1. Retornar somente JSON valido para body.
+2. Nao usar campos fora dos schemas da API.
+3. `description` em markdown.
+4. `acceptance_criteria` como lista verificavel.
+5. Em endpoints nested, nao incluir `parent_id` no body.
+
+## Fluxo quando o usuario fornece ID
+
+1. Consultar o item por ID.
+2. Validar o tipo retornado.
+3. Gerar payload para o endpoint nested correspondente.
+
+## Contrato de body: features para epic
 
 ```json
 {
@@ -20,94 +35,62 @@ Retorne **somente JSON válido** no formato:
     "iteration_path": null,
     "tags": "string ou null"
   },
-  "epics": [
+  "features": [
     {
       "title": "string",
       "description": "string markdown",
       "acceptance_criteria": [
         "criterio 1"
-      ],
-      "features": [
-        {
-          "title": "string",
-          "description": "string markdown",
-          "acceptance_criteria": [
-            "criterio 1"
-          ],
-          "pbis": [
-            {
-              "title": "string",
-              "description": "string markdown",
-              "acceptance_criteria": [
-                "criterio 1"
-              ],
-              "tasks": [
-                {
-                  "title": "string",
-                  "description": "string markdown",
-                  "acceptance_criteria": [
-                    "criterio 1"
-                  ]
-                }
-              ]
-            }
-          ]
-        }
       ]
     }
   ]
 }
 ```
 
----
-
-## Regras
-
-1. Não usar campos fora do schema `PlanIn`.
-2. Todos os objetos devem conter `title`.
-3. `description` sempre em markdown.
-4. `acceptance_criteria` sempre como lista de strings verificáveis.
-5. Se um nível não estiver detalhado, retornar lista vazia (`[]`) no nó correspondente.
-6. Não retornar texto explicativo fora do JSON.
-
----
-
-## Estratégia de uso com os demais prompts
-
-1. Gerar `EpicIn` com `prompt-epic.md`.
-2. Gerar `FeatureIn` e anexar em `epics[].features`.
-3. Gerar lista de `PbiIn` e anexar em `features[].pbis`.
-4. Gerar lista de `TaskIn` e anexar em `pbis[].tasks`.
-5. Consolidar tudo em `PlanIn` e enviar para `/v1/scrum/execute`.
-
----
-
-## Exemplo mínimo válido
+## Contrato de body: pbis para feature
 
 ```json
 {
   "defaults": {
     "area_path": null,
     "iteration_path": null,
-    "tags": "automation;api"
+    "tags": "string ou null"
   },
-  "epics": [
+  "product_backlog_items": [
     {
-      "title": "Automacao de Backlog",
-      "description": "## Contexto\\n...",
+      "title": "string",
+      "description": "string markdown",
       "acceptance_criteria": [
-        "Epic aprovado pelas areas envolvidas"
-      ],
-      "features": []
+        "criterio 1"
+      ]
     }
   ]
 }
 ```
 
----
+## Contrato de body: tasks para pbi
+
+```json
+{
+  "defaults": {
+    "area_path": null,
+    "iteration_path": null,
+    "tags": "string ou null"
+  },
+  "tasks": [
+    {
+      "title": "string",
+      "description": "string markdown",
+      "acceptance_criteria": [
+        "criterio 1"
+      ]
+    }
+  ]
+}
+```
 
 ## Entrada
 
 ```text
-[COLE AQUI A NECESSIDADE DE NEGOCIO E O NIVEL DE DETALHE ESPERADO]
+[COLE AQUI A NECESSIDADE, O ITEM BASE E O ID DO ITEM]
 ```

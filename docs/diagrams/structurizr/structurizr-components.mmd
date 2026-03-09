@@ -1,0 +1,40 @@
+graph LR
+  linkStyle default fill:#ffffff
+
+  subgraph diagram ["C3 - Componentes da API"]
+    style diagram fill:#ffffff,stroke:#ffffff
+
+    3["<div style='font-weight: bold'>Azure DevOps Boards</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>Sistema alvo para criação de<br />Work Items.</div>"]
+    style 3 fill:#1168bd,stroke:#0b4884,color:#ffffff
+
+    subgraph 6 ["ADO Scrum Bootstrap Gateway"]
+      style 6 fill:#ffffff,stroke:#0b4884,color:#0b4884
+
+      subgraph 7 ["API Worker (FastAPI)"]
+        style 7 fill:#ffffff,stroke:#2e6295,color:#2e6295
+
+        10["<div style='font-weight: bold'>Batch Creator by Work Item Type</div><div style='font-size: 70%; margin-top: 0px'>[Component]</div><div style='font-size: 80%; margin-top:10px'>Cria lotes por endpoint:<br />Epic, Feature, Product<br />Backlog Item e Task.</div>"]
+        style 10 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        11["<div style='font-weight: bold'>Work Item Reader</div><div style='font-size: 70%; margin-top: 0px'>[Component]</div><div style='font-size: 80%; margin-top:10px'>Consulta Work Item por ID e<br />extrai parent/children.</div>"]
+        style 11 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        12["<div style='font-weight: bold'>Azure DevOps Client</div><div style='font-size: 70%; margin-top: 0px'>[Component]</div><div style='font-size: 80%; margin-top:10px'>Executa chamadas REST para<br />criação de Work Items e<br />links.</div>"]
+        style 12 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        13["<div style='font-weight: bold'>Response Builder</div><div style='font-size: 70%; margin-top: 0px'>[Component]</div><div style='font-size: 80%; margin-top:10px'>Monta resposta com IDs e<br />URLs.</div>"]
+        style 13 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        8["<div style='font-weight: bold'>Auth & Environment Resolver</div><div style='font-size: 70%; margin-top: 0px'>[Component]</div><div style='font-size: 80%; margin-top:10px'>Valida API key e resolve<br />variáveis de ambiente.</div>"]
+        style 8 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        9["<div style='font-weight: bold'>Payload Validator & Normalizer</div><div style='font-size: 70%; margin-top: 0px'>[Component]</div><div style='font-size: 80%; margin-top:10px'>Valida payload por tipo e<br />normaliza<br />acceptance_criteria/tags/defaults.</div>"]
+        style 9 fill:#85bbf0,stroke:#5d82a8,color:#000000
+      end
+
+    end
+
+    8-. "<div>payload autenticado</div><div style='font-size: 70%'></div>" .->9
+    8-. "<div>consulta autenticada</div><div style='font-size: 70%'></div>" .->11
+    9-. "<div>payload válido e normalizado</div><div style='font-size: 70%'></div>" .->10
+    11-. "<div>busca item por id</div><div style='font-size: 70%'></div>" .->12
+    10-. "<div>operações de criação</div><div style='font-size: 70%'></div>" .->12
+    12-. "<div>REST API 7.1</div><div style='font-size: 70%'></div>" .->3
+    10-. "<div>estrutura de saída</div><div style='font-size: 70%'></div>" .->13
+
+  end

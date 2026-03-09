@@ -1,0 +1,18 @@
+{
+  "defaults": {
+    "area_path": null,
+    "iteration_path": null,
+    "tags": "automation;azure-devops"
+  },
+  "pbis": [
+    {
+      "parent_id": 100001,
+      "title": "Validar contrato de features",
+      "description": "## User Story\nComo API owner, quero validar payload de features para evitar inconsistencias.",
+      "acceptance_criteria": [
+        "Payload invalido retorna 422",
+        "Payload valido cria PBI com parent_id correto"
+      ]
+    }
+  ]
+}
