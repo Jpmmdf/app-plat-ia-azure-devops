@@ -15,12 +15,16 @@ Gateway/API para criacao automatizada de backlog no Azure DevOps com suporte a M
 .
 ├── .github/workflows/deploy-cloudflare.yml
 ├── docs/
+├── src/ops_plat_azure_devops_gateway/
+│   ├── __init__.py
+│   └── app.py
+├── tests/
 ├── prompts/custom-gpt/custom-gpt-system-prompt.md
 ├── examples/create_epics.example.json
 ├── examples/create_features.example.json
 ├── examples/create_pbis.example.json
 ├── examples/create_tasks.example.json
-├── server.py
+├── server.py  # compatibility entrypoint (imports app from src/)
 ├── create_epic.py
 ├── create_scrum_tree.py
 ├── generate_openapi.py
@@ -94,6 +98,13 @@ Criacao direta (bulk):
 ./.venv/bin/python generate_openapi.py --output openapi.yaml
 ./.venv/bin/python generate_openapi.py --output openapi.json --format json
 ```
+
+## Layout do projeto (boas práticas)
+
+- Código da aplicação: `src/ops_plat_azure_devops_gateway/`
+- Ponto de entrada compatível: `server.py`
+- Testes: `tests/`
+- Scripts operacionais: `scripts/` e CLIs em raiz
 
 ## Documentacao
 
