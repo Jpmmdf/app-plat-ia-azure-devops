@@ -17,20 +17,40 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Deploy to Cloudflare
-        uses: cloudflare/wrangler-action@v3
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          wranglerVersion: "4.71.0"
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy
-          secrets: |
-            AZDO_ORG
-            AZDO_PROJECT
-            AZDO_PAT
-            GATEWAY_API_KEY
+          python-version: "3.12"
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install Worker tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install workers-py workers-runtime-sdk
+
+      - name: Upload Worker secrets
         env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           AZDO_ORG: ${{ secrets.AZDO_ORG }}
           AZDO_PROJECT: ${{ secrets.AZDO_PROJECT }}
           AZDO_PAT: ${{ secrets.AZDO_PAT }}
           GATEWAY_API_KEY: ${{ secrets.GATEWAY_API_KEY }}
+        run: |
+          cat > /tmp/worker-secrets.json <<EOF
+          {
+            "AZDO_ORG": "${AZDO_ORG}",
+            "AZDO_PROJECT": "${AZDO_PROJECT}",
+            "AZDO_PAT": "${AZDO_PAT}",
+            "GATEWAY_API_KEY": "${GATEWAY_API_KEY}"
+          }
+          EOF
+          pywrangler secret bulk /tmp/worker-secrets.json
+
+      - name: Deploy to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pywrangler deploy
