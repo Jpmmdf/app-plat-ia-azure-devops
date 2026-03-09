@@ -30,4 +30,5 @@ create_scrum_tree.py
 generate_openapi.py
 requirements.local.txt
 requirements.docs.txt
+requirements.cloudflare.txt
 pyproject.toml

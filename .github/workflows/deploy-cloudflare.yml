@@ -17,6 +17,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build Worker Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          rm -rf python_modules
+          python -m pip install --target python_modules --no-compile -r requirements.cloudflare.txt
+          # Remove native extensions not supported by Python Workers runtime.
+          find python_modules -name '*.so' -delete
+
       - name: Deploy to Cloudflare
         uses: cloudflare/wrangler-action@v3
         with:
