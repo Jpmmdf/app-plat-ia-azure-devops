@@ -26,8 +26,7 @@ Gateway/API para criacao automatizada de backlog no Azure DevOps com suporte a M
 ├── examples/create_tasks.example.json
 ├── server.py  # compatibility entrypoint (imports app from src/)
 ├── requirements.cloudflare.txt
-├── create_epic.py
-├── create_scrum_tree.py
+├── scripts/export_structurizr_diagrams.sh
 ├── generate_openapi.py
 ├── openapi.yaml
 ├── openapi.json
@@ -117,7 +116,7 @@ Criacao direta (bulk):
 - Código da aplicação: `src/ops_plat_azure_devops_gateway/`
 - Ponto de entrada compatível: `server.py`
 - Testes: `tests/`
-- Scripts operacionais: `scripts/` e CLIs em raiz
+- Scripts auxiliares: `scripts/`
 
 ## Documentacao
 

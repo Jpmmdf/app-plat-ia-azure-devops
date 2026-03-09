@@ -7,30 +7,24 @@ source .env
 ./.venv/bin/python -m uvicorn server:app --host 127.0.0.1 --port 8000
 ```
 
-## Execução via CLI
+## Execução via API
 
-### Criar item único
+### Criar epic (payload minimo)
 
 ```bash
-source .env
-./.venv/bin/python create_scrum_tree.py \
-  --type "Feature" \
-  --title "Minha feature" \
-  --parent-id 123
+curl -X POST "http://127.0.0.1:8000/v1/backlog/epics" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: ${GATEWAY_API_KEY}" \
+  -d '{"epics":[{"title":"Epic de teste"}]}'
 ```
 
-### Criar árvore completa por arquivo
+### Criar features para um epic existente
 
 ```bash
-source .env
-./.venv/bin/python create_scrum_tree.py path/plan.json
-```
-
-### Criar epic unitário
-
-```bash
-source .env
-./.venv/bin/python create_epic.py --title "Meu epic"
+curl -X POST "http://127.0.0.1:8000/v1/backlog/epics/123/features" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: ${GATEWAY_API_KEY}" \
+  -d '{"features":[{"title":"Feature de teste"}]}'
 ```
 
 ## Troubleshooting rápido

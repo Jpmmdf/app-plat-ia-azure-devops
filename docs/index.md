@@ -1,6 +1,6 @@
 # ADO Scrum Bootstrap Gateway
 
-Plataforma para criacao automatizada de backlog no Azure DevOps com API, CLI, prompts e deploy em Cloudflare Workers.
+Plataforma para criacao automatizada de backlog no Azure DevOps com API, prompts e deploy em Cloudflare Workers.
 
 ## O que este projeto resolve
 
@@ -13,10 +13,9 @@ Plataforma para criacao automatizada de backlog no Azure DevOps com API, CLI, pr
 
 - `src/ops_plat_azure_devops_gateway/app.py`: implementacao principal da API FastAPI.
 - `server.py`: entrypoint de compatibilidade (`uvicorn server:app` e deploy Worker).
-- `create_scrum_tree.py`: CLI para criacao hierarquica e itens independentes.
-- `create_epic.py`: CLI para criacao unitaria.
 - `generate_openapi.py`: geracao de `openapi.yaml` e `openapi.json`.
 - `requirements.cloudflare.txt`: dependencias Python de runtime para deploy no Worker.
+- `scripts/`: scripts auxiliares (ex.: export de diagramas Structurizr).
 - `tests/`: testes automatizados.
 - `docs/user-guides`: prompts API-first para geracao de payload.
 - `prompts/custom-gpt`: prompt pronto para ingestao no Custom GPT.

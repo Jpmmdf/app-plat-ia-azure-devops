@@ -16,7 +16,6 @@ Exemplos de criacao nested:
 ## Modos de uso
 
 - **API**: integracao de sistemas e automacoes.
-- **CLI**: operacao manual, bootstrap e troubleshooting.
 - **Custom GPT**: geracao guiada de payload e execucao assistida.
 
 ## Contratos principais
