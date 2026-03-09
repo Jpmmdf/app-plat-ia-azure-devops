@@ -16,6 +16,7 @@ Plataforma para criacao automatizada de backlog no Azure DevOps com API, CLI, pr
 - `create_scrum_tree.py`: CLI para criacao hierarquica e itens independentes.
 - `create_epic.py`: CLI para criacao unitaria.
 - `generate_openapi.py`: geracao de `openapi.yaml` e `openapi.json`.
+- `requirements.cloudflare.txt`: dependencias Python de runtime para deploy no Worker.
 - `tests/`: testes automatizados.
 - `docs/user-guides`: prompts API-first para geracao de payload.
 - `prompts/custom-gpt`: prompt pronto para ingestao no Custom GPT.

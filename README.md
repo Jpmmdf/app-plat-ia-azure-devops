@@ -25,6 +25,7 @@ Gateway/API para criacao automatizada de backlog no Azure DevOps com suporte a M
 ├── examples/create_pbis.example.json
 ├── examples/create_tasks.example.json
 ├── server.py  # compatibility entrypoint (imports app from src/)
+├── requirements.cloudflare.txt
 ├── create_epic.py
 ├── create_scrum_tree.py
 ├── generate_openapi.py
@@ -98,6 +99,18 @@ Criacao direta (bulk):
 ./.venv/bin/python generate_openapi.py --output openapi.yaml
 ./.venv/bin/python generate_openapi.py --output openapi.json --format json
 ```
+
+## Deploy Cloudflare (resumo)
+
+- Workflow usa `cloudflare/wrangler-action@v3`.
+- Antes do deploy, o pipeline gera `python_modules` com `requirements.cloudflare.txt`.
+- Secrets necessários:
+  - `CLOUDFLARE_API_TOKEN`
+  - `CLOUDFLARE_ACCOUNT_ID`
+  - `AZDO_ORG`
+  - `AZDO_PROJECT`
+  - `AZDO_PAT`
+  - `GATEWAY_API_KEY`
 
 ## Layout do projeto (boas práticas)
 

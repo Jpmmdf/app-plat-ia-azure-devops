@@ -2,3 +2,6 @@ name = "ops-plat-azure-devops-gateway"
 main = "server.py"
 compatibility_date = "2026-02-22"
 compatibility_flags = ["python_workers"]
+
+[observability]
+enabled = true
