@@ -1,0 +1,11 @@
+.venv
+.venv/**
+**/.venv/**
+.venv-workers
+.venv-workers/**
+**/.venv-workers/**
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env

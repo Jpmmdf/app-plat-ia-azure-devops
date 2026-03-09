@@ -1,0 +1,228 @@
+openapi: 3.1.0
+info:
+  title: ADO Scrum Bootstrap Gateway
+  version: 1.0.0
+paths:
+  /health:
+    get:
+      summary: Health
+      operationId: health_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /v1/scrum/execute:
+    post:
+      summary: Execute Scrum
+      operationId: execute_scrum_v1_scrum_execute_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanIn'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecuteResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - APIKeyHeader: []
+components:
+  schemas:
+    DefaultsIn:
+      properties:
+        area_path:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Area Path
+        iteration_path:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Iteration Path
+        tags:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Tags
+      type: object
+      title: DefaultsIn
+    EpicIn:
+      properties:
+        title:
+          type: string
+          title: Title
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        acceptance_criteria:
+          anyOf:
+          - type: string
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Acceptance Criteria
+        features:
+          items:
+            $ref: '#/components/schemas/FeatureIn'
+          type: array
+          title: Features
+      type: object
+      required:
+      - title
+      title: EpicIn
+    ExecuteResponse:
+      properties:
+        org:
+          type: string
+          title: Org
+        project:
+          type: string
+          title: Project
+        created:
+          additionalProperties: true
+          type: object
+          title: Created
+      type: object
+      required:
+      - org
+      - project
+      - created
+      title: ExecuteResponse
+    FeatureIn:
+      properties:
+        title:
+          type: string
+          title: Title
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        acceptance_criteria:
+          anyOf:
+          - type: string
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Acceptance Criteria
+        pbis:
+          items:
+            $ref: '#/components/schemas/PbiIn'
+          type: array
+          title: Pbis
+      type: object
+      required:
+      - title
+      title: FeatureIn
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    PbiIn:
+      properties:
+        title:
+          type: string
+          title: Title
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        acceptance_criteria:
+          anyOf:
+          - type: string
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Acceptance Criteria
+        tasks:
+          items:
+            $ref: '#/components/schemas/TaskIn'
+          type: array
+          title: Tasks
+      type: object
+      required:
+      - title
+      title: PbiIn
+    PlanIn:
+      properties:
+        defaults:
+          $ref: '#/components/schemas/DefaultsIn'
+        epics:
+          items:
+            $ref: '#/components/schemas/EpicIn'
+          type: array
+          title: Epics
+      type: object
+      title: PlanIn
+    TaskIn:
+      properties:
+        title:
+          type: string
+          title: Title
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        acceptance_criteria:
+          anyOf:
+          - type: string
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Acceptance Criteria
+      type: object
+      required:
+      - title
+      title: TaskIn
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+  securitySchemes:
+    APIKeyHeader:
+      type: apiKey
+      in: header
+      name: X-API-Key

@@ -1,0 +1,46 @@
+site_name: ADO Scrum Bootstrap Gateway
+
+theme:
+  name: material
+  language: pt-BR
+
+nav:
+  - Home: index.md
+  - Visão Geral: visao-geral.md
+  - Arquitetura: arquitetura.md
+  - API: api.md
+  - Operação: operacao.md
+  - Segurança: security.md
+  - Deploy: deploy-cloudflare-github-actions.md
+  - Custom GPT: custom-gpt.md
+  - Guias de Uso:
+      - Orquestração do Backlog: user-guides/prompt-orquestracao.md
+      - Prompt de Epic: user-guides/prompt-epic.md
+      - Prompt de Feature: user-guides/prompt-feature.md
+      - Prompt de PBI: user-guides/prompt-pbi.md
+      - Prompt de Tasks Técnicas: user-guides/prompt-task.md
+  - Prompts (Texto Oficial para IA):
+      - Prompt de Orquestração: prompts/order.md
+      - Prompt de Feature: prompts/create_feature.md
+      - Prompt de PBI: prompts/create_pbi.md
+      - Prompt de Tasks: prompts/create_task.md
+
+  
+
+plugins:
+  - search
+  - mermaid2
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - codehilite:
+      linenums: true
+  - attr_list
+  - pymdownx.superfences:
+        # make exceptions to highlighting of code:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:mermaid2.fence_mermaid_custom
