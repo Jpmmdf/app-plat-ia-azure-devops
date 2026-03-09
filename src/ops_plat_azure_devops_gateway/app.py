@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import base64
 import json
 import logging
 import os
 import re
 from typing import Any, Dict, List, Optional, Union
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request, Security
@@ -15,10 +16,11 @@ from pydantic import BaseModel, Field
 
 try:
     import asgi
-    from workers import WorkerEntrypoint
+    from workers import WorkerEntrypoint, fetch as workers_fetch
 except Exception:
     asgi = None
     WorkerEntrypoint = None
+    workers_fetch = None
 
 API_VERSION = "7.1"
 DEFAULT_AZDO_ORG = None
@@ -209,20 +211,78 @@ def _runtime_error_detail(ex: Exception) -> str:
     return f"{ex.__class__.__name__} sem detalhe"
 
 
+def _basic_auth_header(pat: str) -> str:
+    # Azure DevOps PAT uses basic auth with empty username.
+    token = f":{pat}".encode("utf-8")
+    encoded = base64.b64encode(token).decode("ascii")
+    return f"Basic {encoded}"
+
+
+def _url_with_query_params(url: str, params: Optional[Dict[str, Any]]) -> str:
+    if not params:
+        return url
+    pairs: List[tuple[str, str]] = []
+    for key, value in params.items():
+        if value is None:
+            continue
+        if isinstance(value, (list, tuple)):
+            for item in value:
+                pairs.append((str(key), str(item)))
+        else:
+            pairs.append((str(key), str(value)))
+    if not pairs:
+        return url
+    sep = "&" if "?" in url else "?"
+    return f"{url}{sep}{urlencode(pairs)}"
+
+
 async def req(method: str, url: str, pat: str, headers=None, params=None, json_body=None, timeout=30):
-    h = {"Accept": "application/json"}
+    h = {
+        "Accept": "application/json",
+        "Authorization": _basic_auth_header(pat),
+    }
     if headers:
         h.update(headers)
 
     try:
-        async with httpx.AsyncClient(timeout=timeout, auth=httpx.BasicAuth("", pat)) as client:
-            r = await client.request(
+        if workers_fetch is not None:
+            worker_url = _url_with_query_params(url, params)
+            body = None if json_body is None else json.dumps(json_body, ensure_ascii=False)
+            _json_log(
+                logging.DEBUG,
+                "azure_devops_request_dispatch",
+                transport="workers_fetch",
+                method=method,
+                url=worker_url,
+            )
+            r = await workers_fetch(worker_url, method=method.upper(), headers=h, body=body)
+            status_code = int(getattr(r, "status", 0))
+            response_text = await r.text()
+            content_type = ((r.headers.get("content-type") if getattr(r, "headers", None) else "") or "").lower()
+            activity_id = (
+                (r.headers.get("x-vss-e2eid") if getattr(r, "headers", None) else None)
+                or (r.headers.get("activityid") if getattr(r, "headers", None) else None)
+            )
+        else:
+            _json_log(
+                logging.DEBUG,
+                "azure_devops_request_dispatch",
+                transport="httpx",
                 method=method,
                 url=url,
-                headers=h,
-                params=params,
-                json=json_body,
             )
+            async with httpx.AsyncClient(timeout=timeout) as client:
+                r = await client.request(
+                    method=method,
+                    url=url,
+                    headers=h,
+                    params=params,
+                    json=json_body,
+                )
+            status_code = r.status_code
+            response_text = r.text
+            content_type = ((r.headers.get("content-type") or "")).lower()
+            activity_id = r.headers.get("x-vss-e2eid") or r.headers.get("activityid")
     except Exception as ex:
         detail = _runtime_error_detail(ex)
         _json_log(
@@ -235,11 +295,11 @@ async def req(method: str, url: str, pat: str, headers=None, params=None, json_b
         )
         raise RuntimeError(f"Azure DevOps request exception - {detail}") from ex
 
-    if r.status_code >= 400:
+    if status_code >= 400:
         try:
-            detail = r.json()
+            detail = json.loads(response_text) if response_text else ""
         except Exception:
-            detail = r.text
+            detail = response_text
         detail_text = _compact_text(detail)
         _json_log(
             logging.ERROR,
@@ -247,46 +307,45 @@ async def req(method: str, url: str, pat: str, headers=None, params=None, json_b
             method=method,
             url=url,
             params=params,
-            status_code=r.status_code,
-            content_type=r.headers.get("content-type"),
-            activity_id=r.headers.get("x-vss-e2eid") or r.headers.get("activityid"),
+            status_code=status_code,
+            content_type=content_type,
+            activity_id=activity_id,
             detail=detail_text,
         )
-        raise RuntimeError(f"Azure DevOps HTTP {r.status_code} - {detail_text}")
+        raise RuntimeError(f"Azure DevOps HTTP {status_code} - {detail_text}")
 
-    if not r.text:
+    if not response_text:
         return None
 
-    content_type = (r.headers.get("content-type") or "").lower()
     if "application/json" not in content_type:
-        snippet = _compact_text(r.text[:400].replace("\n", " "))
+        snippet = _compact_text(response_text[:400].replace("\n", " "))
         _json_log(
             logging.ERROR,
             "azure_devops_non_json_response",
             method=method,
             url=url,
             params=params,
-            status_code=r.status_code,
+            status_code=status_code,
             content_type=content_type,
             snippet=snippet,
         )
-        raise RuntimeError(f"Azure DevOps HTTP {r.status_code} - Resposta nao JSON: {snippet}")
+        raise RuntimeError(f"Azure DevOps HTTP {status_code} - Resposta nao JSON: {snippet}")
 
     try:
-        return r.json()
+        return json.loads(response_text)
     except ValueError as ex:
-        snippet = _compact_text(r.text[:400].replace("\n", " "))
+        snippet = _compact_text(response_text[:400].replace("\n", " "))
         _json_log(
             logging.ERROR,
             "azure_devops_invalid_json_response",
             method=method,
             url=url,
             params=params,
-            status_code=r.status_code,
+            status_code=status_code,
             content_type=content_type,
             snippet=snippet,
         )
-        raise RuntimeError(f"Azure DevOps HTTP {r.status_code} - JSON invalido: {snippet}") from ex
+        raise RuntimeError(f"Azure DevOps HTTP {status_code} - JSON invalido: {snippet}") from ex
 
 
 def normalize_tags(tags: Optional[str]) -> Optional[str]:
