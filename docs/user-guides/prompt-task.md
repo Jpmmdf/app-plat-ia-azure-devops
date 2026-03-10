@@ -16,7 +16,7 @@ Retorne somente JSON valido:
   "defaults": {
     "area_path": null,
     "iteration_path": null,
-    "tags": "string ou null"
+    "tags": "string com 3 a 8 tags separadas por ; (null somente se solicitado)"
   },
   "tasks": [
     {
@@ -36,6 +36,14 @@ Retorne somente JSON valido:
 1. Nao incluir `parent_id` no body do endpoint nested.
 2. Cada task deve ter escopo pequeno e executavel.
 3. `acceptance_criteria` deve ser checklist verificavel.
+4. Gerar `defaults.tags` obrigatoriamente (nao usar `null` por padrao).
+
+## Regra de tags (obrigatoria)
+
+- Preencher `defaults.tags` com 3 a 8 tags separadas por `;`.
+- Incluir componente/tema tecnico + fase de trabalho (ex.: implementacao, validacao, observabilidade).
+- Herdar tags do PBI/Feature quando aplicavel.
+- So usar `null` se o usuario pedir explicitamente.
 
 ## Entrada
 

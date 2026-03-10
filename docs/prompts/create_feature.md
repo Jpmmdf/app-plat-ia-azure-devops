@@ -12,6 +12,8 @@ Endpoint alvo: `POST /v1/backlog/epics/{epic_id}/features`
 4. `description` deve ser markdown.
 5. `acceptance_criteria` deve ser lista de criterios verificaveis.
 6. Nao incluir `parent_id` no body (o pai vem no path).
+7. `defaults.tags` deve ser preenchido com 3 a 8 tags separadas por `;`.
+8. So use `tags: null` se o usuario pedir explicitamente "sem tags".
 
 # Output Format
 Retorne exatamente:
@@ -21,7 +23,7 @@ Retorne exatamente:
   "defaults": {
     "area_path": null,
     "iteration_path": null,
-    "tags": "string ou null"
+    "tags": "string com 3 a 8 tags separadas por ; (null somente se solicitado)"
   },
   "features": [
     {

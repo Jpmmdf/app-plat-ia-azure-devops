@@ -16,7 +16,7 @@ Retorne somente JSON valido:
   "defaults": {
     "area_path": null,
     "iteration_path": null,
-    "tags": "string ou null"
+    "tags": "string com 3 a 8 tags separadas por ; (null somente se solicitado)"
   },
   "product_backlog_items": [
     {
@@ -36,6 +36,14 @@ Retorne somente JSON valido:
 1. Nao incluir `parent_id` no body do endpoint nested.
 2. Cada PBI deve ser entregavel e testavel.
 3. `acceptance_criteria` verificavel.
+4. Gerar `defaults.tags` obrigatoriamente (nao usar `null` por padrao).
+
+## Regra de tags (obrigatoria)
+
+- Preencher `defaults.tags` com 3 a 8 tags separadas por `;`.
+- Incluir area funcional, capacidade tecnica e contexto do item pai.
+- Reutilizar tags do nivel anterior quando fizer sentido.
+- So usar `null` se o usuario pedir explicitamente.
 
 ## Entrada
 

@@ -16,7 +16,7 @@ Retorne **somente JSON valido** no formato:
   "defaults": {
     "area_path": null,
     "iteration_path": null,
-    "tags": "string ou null"
+    "tags": "string com 3 a 8 tags separadas por ; (null somente se solicitado)"
   },
   "epics": [
     {
@@ -39,6 +39,15 @@ Retorne **somente JSON valido** no formato:
 3. `description` deve ser markdown com contexto executivo.
 4. `acceptance_criteria` deve ser lista de 3 a 7 criterios verificaveis.
 5. Se nao houver dados suficientes para numeros/datas, usar premissas explicitas em `description`.
+6. Gerar `defaults.tags` obrigatoriamente (nao usar `null` por padrao).
+
+## Regra de tags (obrigatoria)
+
+- Sempre preencher `defaults.tags` com 3 a 8 tags.
+- Formato: string unica separada por `;` (ex.: `backstage;aws;platform-engineering`).
+- Usar tags de dominio, tecnologia e objetivo de negocio.
+- Se o usuario informar tags, reaproveitar e complementar sem duplicar.
+- So usar `null` se o usuario pedir explicitamente "sem tags".
 
 ## Estrutura recomendada para `description`
 

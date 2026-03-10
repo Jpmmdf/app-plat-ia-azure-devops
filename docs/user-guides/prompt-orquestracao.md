@@ -19,6 +19,14 @@ Endpoints usados:
 3. `description` em markdown.
 4. `acceptance_criteria` como lista verificavel.
 5. Em endpoints nested, nao incluir `parent_id` no body.
+6. Gerar `defaults.tags` obrigatoriamente (nao usar `null` por padrao).
+
+## Regra de tags (obrigatoria)
+
+- Em cada payload gerado, preencher `defaults.tags` com 3 a 8 tags separadas por `;`.
+- Manter coerencia de tags ao longo da hierarquia (Epic -> Feature -> PBI -> Task).
+- Reutilizar tags centrais do item pai e acrescentar tags do nivel atual.
+- So usar `null` se o usuario pedir explicitamente "sem tags".
 
 ## Fluxo quando o usuario fornece ID
 
@@ -33,7 +41,7 @@ Endpoints usados:
   "defaults": {
     "area_path": null,
     "iteration_path": null,
-    "tags": "string ou null"
+    "tags": "string com 3 a 8 tags separadas por ; (null somente se solicitado)"
   },
   "features": [
     {
@@ -54,7 +62,7 @@ Endpoints usados:
   "defaults": {
     "area_path": null,
     "iteration_path": null,
-    "tags": "string ou null"
+    "tags": "string com 3 a 8 tags separadas por ; (null somente se solicitado)"
   },
   "product_backlog_items": [
     {
@@ -75,7 +83,7 @@ Endpoints usados:
   "defaults": {
     "area_path": null,
     "iteration_path": null,
-    "tags": "string ou null"
+    "tags": "string com 3 a 8 tags separadas por ; (null somente se solicitado)"
   },
   "tasks": [
     {
