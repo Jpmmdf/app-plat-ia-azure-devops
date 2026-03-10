@@ -29,8 +29,9 @@ Alternativa local (arquivo versionado no repo):
 5. Para backlog completo, GPT executa em ordem:
    - `POST /v1/backlog/epics`
    - `POST /v1/backlog/epics/{epic_id}/features`
-   - `POST /v1/backlog/features/{feature_id}/product-backlog-items`
-   - `POST /v1/backlog/product-backlog-items/{product_backlog_item_id}/tasks`
+   - PBIs em bloco: `POST /v1/backlog/product-backlog-items` (com `parent_id`)
+   - Tasks em bloco: `POST /v1/backlog/tasks` (com `parent_id`)
+   - Fallback nested quando solicitado explicitamente.
 6. GPT retorna resumo final com totais, IDs e links criados por nivel.
 
 ## Configuracao recomendada

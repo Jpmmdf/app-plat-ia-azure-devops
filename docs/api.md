@@ -30,6 +30,25 @@ Criacao direta (bulk):
 3. Criar proximo nivel com endpoint nested correspondente.
 4. Repetir para os niveis seguintes.
 
+## Modo performance (backlog grande)
+
+Para reduzir tempo total de execucao em backlog volumoso:
+
+1. Criar epics em lote: `POST /v1/backlog/epics`.
+2. Criar features por epic: `POST /v1/backlog/epics/{epic_id}/features`.
+3. Criar PBIs em blocos usando endpoint direto:
+   - `POST /v1/backlog/product-backlog-items`
+   - cada item com `parent_id` da feature correspondente.
+4. Criar Tasks em blocos usando endpoint direto:
+   - `POST /v1/backlog/tasks`
+   - cada item com `parent_id` do PBI correspondente.
+
+Recomendacao de chunk:
+
+- 10 a 25 itens por chamada para PBIs e Tasks.
+- Em timeout/falha por volume, reduzir tamanho do bloco.
+- A API valida limite por requisicao para PBIs/Tasks e retorna `400` se exceder.
+
 ## Exemplo: usuario passou ID de Epic
 
 ### 1) Consultar o epic
@@ -95,6 +114,11 @@ Em endpoints diretos de filhos, `parent_id` e obrigatorio no body.
   - `title`
   - `url`
   - `parent_id` (quando aplicavel)
+- `failed[]` com falhas parciais por item:
+  - `type`
+  - `title`
+  - `parent_id` (quando aplicavel)
+  - `error`
 
 ## OpenAPI
 

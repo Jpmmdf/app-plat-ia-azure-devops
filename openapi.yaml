@@ -250,6 +250,11 @@ components:
             $ref: '#/components/schemas/CreatedItemOut'
           type: array
           title: Created
+        failed:
+          items:
+            $ref: '#/components/schemas/FailedItemOut'
+          type: array
+          title: Failed
       type: object
       required:
       - org
@@ -415,6 +420,28 @@ components:
       required:
       - title
       title: EpicCreateIn
+    FailedItemOut:
+      properties:
+        type:
+          type: string
+          title: Type
+        title:
+          type: string
+          title: Title
+        error:
+          type: string
+          title: Error
+        parent_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Parent Id
+      type: object
+      required:
+      - type
+      - title
+      - error
+      title: FailedItemOut
     FeatureCreateChildIn:
       properties:
         title:

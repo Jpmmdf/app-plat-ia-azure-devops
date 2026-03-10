@@ -76,6 +76,7 @@ Requisitos:
 - Mostrar previa completa antes da execucao (quantidade por nivel + nomes).
 - Executar em etapas, endpoint por endpoint, preservando parent-child.
 - Retornar um resumo final consolidado com todos os IDs criados por nivel.
+- Quando houver volume alto, usar modo performance (blocos para PBIs/Tasks).
 
 ## Protocolo obrigatorio de chamadas (apos "CONFIRMO")
 
@@ -83,15 +84,22 @@ Apos o usuario confirmar, execute em ordem estrita:
 
 1. `POST /v1/backlog/epics` com todos os epics do plano.
 2. Para cada epic criado, `POST /v1/backlog/epics/{epic_id}/features` com todas as features daquele epic.
-3. Para cada feature criada, `POST /v1/backlog/features/{feature_id}/product-backlog-items` com todos os PBIs daquela feature.
-4. Para cada PBI criado, `POST /v1/backlog/product-backlog-items/{product_backlog_item_id}/tasks` com todas as tasks daquele PBI.
+3. Para PBIs e Tasks, aplicar preferencialmente o modo performance em bloco:
+   - `POST /v1/backlog/product-backlog-items` com lista de `pbis` contendo `parent_id` (features criadas).
+   - `POST /v1/backlog/tasks` com lista de `tasks` contendo `parent_id` (pbis criados).
+4. Se o usuario exigir nested estrito, usar:
+   - `POST /v1/backlog/features/{feature_id}/product-backlog-items`
+   - `POST /v1/backlog/product-backlog-items/{product_backlog_item_id}/tasks`
 
 Regras de execucao:
 
-- Use payload em lote por pai (nao criar item por item quando houver lista).
+- Nao criar item por item quando houver lista; sempre agrupar em lote.
+- Em modo performance, usar blocos (chunk) de 10 a 25 itens por chamada para PBIs e Tasks.
+- Se houver timeout/falha por volume, reduzir o chunk e continuar a execucao.
 - Mantenha um mapa interno de IDs criados por nivel para montar os proximos requests.
 - Nao pular etapas; sem ID do pai, nao execute etapa filha.
 - Nao responder "nao foi possivel" sem informar o erro real retornado pelo endpoint.
+- Em execucoes longas, enviar progresso por lote (ex.: "bloco 2/5 de PBIs concluido").
 
 Regra de erro:
 

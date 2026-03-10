@@ -37,6 +37,8 @@ OPENAPI_SERVER_URL = os.getenv(
     "OPENAPI_SERVER_URL",
     "https://ops-plat-azure-devops-gateway.pedro-milhome.workers.dev",
 )
+MAX_BULK_PBIS = int(os.getenv("MAX_BULK_PBIS", "25"))
+MAX_BULK_TASKS = int(os.getenv("MAX_BULK_TASKS", "25"))
 logging.basicConfig(level=getattr(logging, LOG_LEVEL, logging.INFO))
 logger = logging.getLogger("ops_plat_azure_devops_gateway")
 
@@ -128,10 +130,18 @@ class CreatedItemOut(BaseModel):
     parent_id: Optional[int] = None
 
 
+class FailedItemOut(BaseModel):
+    type: str
+    title: str
+    error: str
+    parent_id: Optional[int] = None
+
+
 class BatchCreateResponse(BaseModel):
     org: str
     project: str
     created: List[CreatedItemOut]
+    failed: List[FailedItemOut] = Field(default_factory=list)
 
 
 class WorkItemOut(BaseModel):
@@ -632,6 +642,15 @@ def ensure_non_empty(items: List[Any], field_name: str) -> None:
     raise HTTPException(status_code=400, detail=f"Informe ao menos um item em '{field_name}'.")
 
 
+def ensure_batch_limit(items: List[Any], field_name: str, max_items: int) -> None:
+    if len(items) <= max_items:
+        return
+    raise HTTPException(
+        status_code=400,
+        detail=f"Limite por requisicao excedido em '{field_name}': {len(items)} itens (maximo {max_items}).",
+    )
+
+
 def _raise_http_400_with_log(ex: Exception, request: Request, operation: str) -> None:
     detail = _runtime_error_detail(ex)
     _json_log(logging.ERROR, "operation_failed", operation=operation, detail=detail, **_request_log_context(request))
@@ -707,7 +726,7 @@ async def create_items_batch(
     wit_type: str,
     acceptance_field_cache: Dict[str, bool],
     forced_parent_id: Optional[int] = None,
-) -> List[CreatedItemOut]:
+) -> tuple[List[CreatedItemOut], List[FailedItemOut]]:
     acceptance_supported = await resolve_acceptance_support(
         org,
         project,
@@ -716,6 +735,7 @@ async def create_items_batch(
         acceptance_field_cache,
     )
     created_items: List[CreatedItemOut] = []
+    failed_items: List[FailedItemOut] = []
 
     for item in items:
         area = resolve_item_field(item, defaults, "area_path") or project
@@ -723,35 +743,54 @@ async def create_items_batch(
         tags = resolve_item_field(item, defaults, "tags")
         parent_id = forced_parent_id if forced_parent_id is not None else getattr(item, "parent_id", None)
 
-        wi = await create_work_item(
-            org,
-            project,
-            pat,
-            wit_type,
-            build_patch_ops(
-                item.title,
-                item.description,
-                item.acceptance_criteria,
-                acceptance_supported,
-                area,
-                iteration,
-                tags,
-                parent_id,
+        try:
+            wi = await create_work_item(
                 org,
                 project,
-            ),
-        )
-        wi_id = int(wi["id"])
-        created_items.append(
-            CreatedItemOut(
-                id=wi_id,
-                type=wit_type,
-                title=item.title,
-                url=ui_link(org, project, wi_id),
-                parent_id=parent_id,
+                pat,
+                wit_type,
+                build_patch_ops(
+                    item.title,
+                    item.description,
+                    item.acceptance_criteria,
+                    acceptance_supported,
+                    area,
+                    iteration,
+                    tags,
+                    parent_id,
+                    org,
+                    project,
+                ),
             )
-        )
-    return created_items
+            wi_id = int(wi["id"])
+            created_items.append(
+                CreatedItemOut(
+                    id=wi_id,
+                    type=wit_type,
+                    title=item.title,
+                    url=ui_link(org, project, wi_id),
+                    parent_id=parent_id,
+                )
+            )
+        except Exception as ex:
+            detail = _runtime_error_detail(ex)
+            _json_log(
+                logging.ERROR,
+                "create_item_failed",
+                wit_type=wit_type,
+                title=item.title,
+                parent_id=parent_id,
+                detail=detail,
+            )
+            failed_items.append(
+                FailedItemOut(
+                    type=wit_type,
+                    title=item.title,
+                    parent_id=parent_id,
+                    error=detail,
+                )
+            )
+    return created_items, failed_items
 
 
 @app.get("/health")
@@ -792,7 +831,7 @@ async def create_epics(
     ensure_non_empty(payload.epics, "epics")
     cache: Dict[str, bool] = {}
     try:
-        created = await create_items_batch(
+        created, failed = await create_items_batch(
             context["org"],
             context["project"],
             context["pat"],
@@ -803,7 +842,7 @@ async def create_epics(
         )
     except RuntimeError as ex:
         _raise_http_400_with_log(ex, request, "create_epics")
-    return BatchCreateResponse(org=context["org"], project=context["project"], created=created)
+    return BatchCreateResponse(org=context["org"], project=context["project"], created=created, failed=failed)
 
 
 @app.post("/v1/backlog/epics/{epic_id}/features", response_model=BatchCreateResponse)
@@ -824,7 +863,7 @@ async def create_features_for_epic(
     )
     cache: Dict[str, bool] = {}
     try:
-        created = await create_items_batch(
+        created, failed = await create_items_batch(
             context["org"],
             context["project"],
             context["pat"],
@@ -836,7 +875,7 @@ async def create_features_for_epic(
         )
     except RuntimeError as ex:
         _raise_http_400_with_log(ex, request, "create_features_for_epic")
-    return BatchCreateResponse(org=context["org"], project=context["project"], created=created)
+    return BatchCreateResponse(org=context["org"], project=context["project"], created=created, failed=failed)
 
 
 @app.post("/v1/backlog/features", response_model=BatchCreateResponse)
@@ -849,7 +888,7 @@ async def create_features(
     ensure_non_empty(payload.features, "features")
     cache: Dict[str, bool] = {}
     try:
-        created = await create_items_batch(
+        created, failed = await create_items_batch(
             context["org"],
             context["project"],
             context["pat"],
@@ -860,7 +899,7 @@ async def create_features(
         )
     except RuntimeError as ex:
         _raise_http_400_with_log(ex, request, "create_features")
-    return BatchCreateResponse(org=context["org"], project=context["project"], created=created)
+    return BatchCreateResponse(org=context["org"], project=context["project"], created=created, failed=failed)
 
 
 @app.post("/v1/backlog/features/{feature_id}/product-backlog-items", response_model=BatchCreateResponse)
@@ -872,6 +911,7 @@ async def create_pbis_for_feature(
 ):
     context = runtime_context_or_500(request, x_api_key)
     ensure_non_empty(payload.product_backlog_items, "product_backlog_items")
+    ensure_batch_limit(payload.product_backlog_items, "product_backlog_items", MAX_BULK_PBIS)
     await ensure_parent_work_item_type(
         context["org"],
         context["project"],
@@ -881,7 +921,7 @@ async def create_pbis_for_feature(
     )
     cache: Dict[str, bool] = {}
     try:
-        created = await create_items_batch(
+        created, failed = await create_items_batch(
             context["org"],
             context["project"],
             context["pat"],
@@ -893,7 +933,7 @@ async def create_pbis_for_feature(
         )
     except RuntimeError as ex:
         _raise_http_400_with_log(ex, request, "create_pbis_for_feature")
-    return BatchCreateResponse(org=context["org"], project=context["project"], created=created)
+    return BatchCreateResponse(org=context["org"], project=context["project"], created=created, failed=failed)
 
 
 @app.post("/v1/backlog/product-backlog-items", response_model=BatchCreateResponse)
@@ -904,9 +944,10 @@ async def create_pbis(
 ):
     context = runtime_context_or_500(request, x_api_key)
     ensure_non_empty(payload.pbis, "pbis")
+    ensure_batch_limit(payload.pbis, "pbis", MAX_BULK_PBIS)
     cache: Dict[str, bool] = {}
     try:
-        created = await create_items_batch(
+        created, failed = await create_items_batch(
             context["org"],
             context["project"],
             context["pat"],
@@ -917,7 +958,7 @@ async def create_pbis(
         )
     except RuntimeError as ex:
         _raise_http_400_with_log(ex, request, "create_pbis")
-    return BatchCreateResponse(org=context["org"], project=context["project"], created=created)
+    return BatchCreateResponse(org=context["org"], project=context["project"], created=created, failed=failed)
 
 
 @app.post("/v1/backlog/product-backlog-items/{product_backlog_item_id}/tasks", response_model=BatchCreateResponse)
@@ -929,6 +970,7 @@ async def create_tasks_for_pbi(
 ):
     context = runtime_context_or_500(request, x_api_key)
     ensure_non_empty(payload.tasks, "tasks")
+    ensure_batch_limit(payload.tasks, "tasks", MAX_BULK_TASKS)
     await ensure_parent_work_item_type(
         context["org"],
         context["project"],
@@ -938,7 +980,7 @@ async def create_tasks_for_pbi(
     )
     cache: Dict[str, bool] = {}
     try:
-        created = await create_items_batch(
+        created, failed = await create_items_batch(
             context["org"],
             context["project"],
             context["pat"],
@@ -950,7 +992,7 @@ async def create_tasks_for_pbi(
         )
     except RuntimeError as ex:
         _raise_http_400_with_log(ex, request, "create_tasks_for_pbi")
-    return BatchCreateResponse(org=context["org"], project=context["project"], created=created)
+    return BatchCreateResponse(org=context["org"], project=context["project"], created=created, failed=failed)
 
 
 @app.post("/v1/backlog/tasks", response_model=BatchCreateResponse)
@@ -961,9 +1003,10 @@ async def create_tasks(
 ):
     context = runtime_context_or_500(request, x_api_key)
     ensure_non_empty(payload.tasks, "tasks")
+    ensure_batch_limit(payload.tasks, "tasks", MAX_BULK_TASKS)
     cache: Dict[str, bool] = {}
     try:
-        created = await create_items_batch(
+        created, failed = await create_items_batch(
             context["org"],
             context["project"],
             context["pat"],
@@ -974,7 +1017,7 @@ async def create_tasks(
         )
     except RuntimeError as ex:
         _raise_http_400_with_log(ex, request, "create_tasks")
-    return BatchCreateResponse(org=context["org"], project=context["project"], created=created)
+    return BatchCreateResponse(org=context["org"], project=context["project"], created=created, failed=failed)
 
 
 if asgi is not None and WorkerEntrypoint is not None:
