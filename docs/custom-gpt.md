@@ -6,7 +6,17 @@ Use:
 
 - `prompts/custom-gpt/custom-gpt-system-prompt.md`
 
-Esse prompt foi ajustado para fluxo por contexto de ID existente.
+Esse prompt foi ajustado para fluxo por contexto de ID existente e para gerar itens com alto nivel de detalhe (description estruturada + criterios de aceite verificaveis).
+
+## URL do OpenAPI para Action
+
+Use diretamente a URL remota do Worker:
+
+- `https://ops-plat-azure-devops-gateway.pedro-milhome.workers.dev/openapi.json`
+
+Alternativa local (arquivo versionado no repo):
+
+- `openapi.json`
 
 ## Fluxo recomendado na Action
 
@@ -20,7 +30,7 @@ Esse prompt foi ajustado para fluxo por contexto de ID existente.
 ## Configuracao recomendada
 
 1. Copiar o conteudo do prompt para o campo de instrucoes do GPT.
-2. Adicionar Action com `openapi.json`.
+2. Adicionar Action com `https://ops-plat-azure-devops-gateway.pedro-milhome.workers.dev/openapi.json`.
 3. Configurar autenticacao com header `X-API-Key`.
 4. Testar um caso com Epic criado manualmente e criacao de features a partir do ID.
 

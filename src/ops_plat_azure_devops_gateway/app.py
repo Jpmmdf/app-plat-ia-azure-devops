@@ -33,6 +33,10 @@ PBI_WIT_NAME = "Product Backlog Item"
 TASK_WIT_NAME = "Task"
 AcceptanceCriteriaInput = Optional[Union[str, List[str]]]
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+OPENAPI_SERVER_URL = os.getenv(
+    "OPENAPI_SERVER_URL",
+    "https://ops-plat-azure-devops-gateway.pedro-milhome.workers.dev",
+)
 logging.basicConfig(level=getattr(logging, LOG_LEVEL, logging.INFO))
 logger = logging.getLogger("ops_plat_azure_devops_gateway")
 
@@ -600,7 +604,11 @@ def ui_link(org: str, project: str, wi_id: int) -> str:
 
 
 # ---------- App ----------
-app = FastAPI(title="ADO Scrum Bootstrap Gateway", version="1.0.0")
+app = FastAPI(
+    title="ADO Scrum Bootstrap Gateway",
+    version="1.0.0",
+    servers=[{"url": OPENAPI_SERVER_URL, "description": "Cloudflare Worker (production)"}],
+)
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
