@@ -1,4 +1,6 @@
 import importlib
+import logging
+import sys
 
 from fastapi.testclient import TestClient
 
@@ -91,3 +93,43 @@ def test_create_epics_returns_failed_items_without_aborting_batch(monkeypatch) -
     assert len(body["created"]) == 1
     assert len(body["failed"]) == 1
     assert body["failed"][0]["title"] == "Epic com falha"
+
+
+def test_json_log_is_disabled_by_default(monkeypatch) -> None:
+    app_module = importlib.import_module("ops_plat_azure_devops_gateway.app")
+    monkeypatch.setattr(app_module, "APP_LOGS_ENABLED", False)
+
+    calls = []
+
+    def fake_log(*args, **kwargs):
+        calls.append((args, kwargs))
+
+    monkeypatch.setattr(app_module.logger, "log", fake_log)
+
+    app_module._json_log(logging.INFO, "runtime_context_resolved", path="/v1/backlog/epics")
+
+    assert calls == []
+
+
+def test_configure_app_logger_uses_stdout_when_enabled() -> None:
+    app_module = importlib.import_module("ops_plat_azure_devops_gateway.app")
+
+    configured_logger = app_module._configure_app_logger(True, "INFO")
+
+    assert configured_logger.propagate is False
+    assert len(configured_logger.handlers) == 1
+
+    handler = configured_logger.handlers[0]
+    assert isinstance(handler, logging.StreamHandler)
+    assert handler.stream is sys.stdout
+
+    record = logging.LogRecord(
+        name="ops_plat_azure_devops_gateway",
+        level=logging.INFO,
+        pathname=__file__,
+        lineno=1,
+        msg='{"event":"test"}',
+        args=(),
+        exc_info=None,
+    )
+    assert handler.format(record) == '{"event":"test"}'

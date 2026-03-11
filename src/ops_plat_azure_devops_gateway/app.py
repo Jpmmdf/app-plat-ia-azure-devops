@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import re
+import sys
 from typing import Any, Dict, List, Optional, Union
 from urllib.parse import quote, urlencode
 
@@ -33,14 +34,35 @@ PBI_WIT_NAME = "Product Backlog Item"
 TASK_WIT_NAME = "Task"
 AcceptanceCriteriaInput = Optional[Union[str, List[str]]]
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+APP_LOGS_ENABLED = os.getenv("APP_LOGS_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
 OPENAPI_SERVER_URL = os.getenv(
     "OPENAPI_SERVER_URL",
     "https://ops-plat-azure-devops-gateway.pedro-milhome.workers.dev",
 )
 MAX_BULK_PBIS = int(os.getenv("MAX_BULK_PBIS", "25"))
 MAX_BULK_TASKS = int(os.getenv("MAX_BULK_TASKS", "25"))
-logging.basicConfig(level=getattr(logging, LOG_LEVEL, logging.INFO))
-logger = logging.getLogger("ops_plat_azure_devops_gateway")
+
+
+def _configure_app_logger(app_logs_enabled: bool, log_level: str) -> logging.Logger:
+    logger = logging.getLogger("ops_plat_azure_devops_gateway")
+    logger.handlers.clear()
+    logger.propagate = False
+
+    if not app_logs_enabled:
+        logger.setLevel(logging.NOTSET)
+        logger.addHandler(logging.NullHandler())
+        return logger
+
+    level = getattr(logging, log_level, logging.INFO)
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(level)
+    handler.setFormatter(logging.Formatter("%(message)s"))
+    logger.setLevel(level)
+    logger.addHandler(handler)
+    return logger
+
+
+logger = _configure_app_logger(APP_LOGS_ENABLED, LOG_LEVEL)
 
 
 # ---------- Models ----------
@@ -190,6 +212,8 @@ def env_get(env_obj: Any, key: str, default: Optional[str] = None) -> Optional[s
 
 
 def _json_log(level: int, event: str, **fields: Any) -> None:
+    if not APP_LOGS_ENABLED:
+        return
     safe_fields = {k: v for k, v in fields.items() if v is not None}
     logger.log(level, json.dumps({"event": event, **safe_fields}, ensure_ascii=True))
 
